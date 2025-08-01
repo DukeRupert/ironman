@@ -1,0 +1,12 @@
+# Configuration file for Viper
+# Environment variables will override these default values
+
+# Orderspace API Configuration
+orderspace_base_url: "https://api.orderspace.com"  # Override with ORDERSPACE_BASE_URL
+orderspace_client_id: ""                           # Override with ORDERSPACE_CLIENT_ID
+orderspace_client_secret: ""                       # Override with ORDERSPACE_CLIENT_SECRET
+
+# WooCommerce API Configuration
+woo_base_url: "https://yourstore.com"              # Override with WOO_BASE_URL
+woo_consumer_key: ""                                # Override with WOO_CONSUMER_KEY
+woo_consumer_secret: ""                             # Override with WOO_CONSUMER_SECRET
