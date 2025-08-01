@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dukerupert/ironman/dto"
@@ -73,6 +75,13 @@ type OrderService struct {
 	wooClient        *woo.Client
 	orderspaceClient *orderspace.Client
 	titleCaser       cases.Caser
+
+	// Cache fields
+	cachedOrders    []dto.UnifiedOrder
+	lastFetched     time.Time
+	cacheDuration   time.Duration
+	mutex           sync.RWMutex
+	refreshing      bool
 }
 
 // NewOrderService creates a new order service
@@ -92,11 +101,17 @@ func NewOrderService(config ClientConfig) *OrderService {
 	// Create a title caser for English
 	titleCaser := cases.Title(language.English)
 
-	return &OrderService{
+	service := &OrderService{
 		wooClient:        wooClient,
 		orderspaceClient: orderspaceClient,
 		titleCaser:       titleCaser,
+		cacheDuration:    5 * time.Minute, // Cache for 5 minutes
 	}
+
+		// Start background refresh routine
+	service.startBackgroundRefresh()
+
+	return service
 }
 
 // FormatCurrency formats the currency amount
@@ -192,112 +207,65 @@ func (s *OrderService) ConvertOrderspaceOrder(order orderspace.Order) dto.Unifie
 	}
 }
 
-// GetUnifiedOrders fetches and combines orders from both systems
-func (s *OrderService) GetUnifiedOrders() ([]dto.UnifiedOrder, error) {
-	slog.Info("Starting to fetch unified orders")
-	var unifiedOrders []dto.UnifiedOrder
-
-	// Fetch WooCommerce orders
-	slog.Info("Fetching WooCommerce orders", "limit", 10)
-	wooOrders, err := s.wooClient.ListOrders(&woo.OrderListOptions{
-		Page:    1,
-		PerPage: 10,
-		OrderBy: "date",
-		Order:   "desc",
-	})
-	if err != nil {
-		slog.Error("Error fetching WooCommerce orders", "error", err)
-	} else {
-		slog.Info("WooCommerce orders fetched successfully",
-			"count", len(wooOrders.Orders),
-			"total_available", wooOrders.Pagination.Total)
-
-		for i, order := range wooOrders.Orders {
-			slog.Debug("Processing WooCommerce order",
-				"index", i,
-				"order_id", order.ID,
-				"status", order.Status,
-				"total", order.Total,
-				"date", order.DateCreated)
-
-			unified := s.ConvertWooOrder(order)
-			unifiedOrders = append(unifiedOrders, unified)
-
-			slog.Debug("Converted WooCommerce order",
-				"unified_order", unified)
-		}
-	}
-
-	// Fetch Orderspace orders
-	slog.Info("Fetching Orderspace orders", "limit", 10)
-	orderspaceOrders, err := s.orderspaceClient.GetLast10Orders()
-	if err != nil {
-		slog.Error("Error fetching Orderspace orders", "error", err)
-	} else {
-		slog.Info("Orderspace orders fetched successfully",
-			"count", len(orderspaceOrders.Orders))
-
-		for i, order := range orderspaceOrders.Orders {
-			slog.Debug("Processing Orderspace order",
-				"index", i,
-				"order_id", order.ID,
-				"order_number", order.Number,
-				"status", order.Status,
-				"total", order.GrossTotal,
-				"date", order.Created)
-
-			unified := s.ConvertOrderspaceOrder(order)
-			unifiedOrders = append(unifiedOrders, unified)
-
-			slog.Debug("Converted Orderspace order",
-				"unified_order", unified)
-		}
-	}
-
-	slog.Info("Unified orders processing complete",
-		"total_unified_orders", len(unifiedOrders),
-		"woo_orders", len(wooOrders.Orders),
-		"orderspace_orders", len(orderspaceOrders.Orders))
-
-	// Sort all orders by date (most recent first)
-	slog.Info("Sorting unified orders by date (most recent first)")
-	sort.Slice(unifiedOrders, func(i, j int) bool {
-		return unifiedOrders[i].SortDate.After(unifiedOrders[j].SortDate)
-	})
-
-	// Log the final unified orders for debugging
-	if len(unifiedOrders) == 0 {
-		slog.Warn("No unified orders found - both systems returned empty or failed")
-	} else {
-		slog.Info("Sample unified orders for verification")
-		for i, order := range unifiedOrders {
-			if i >= 3 { // Only log first 3 for brevity
-				break
+// GetUnifiedOrdersPaginated fetches orders from cache or refreshes if needed
+func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.PaginatedOrders, error) {
+	slog.Info("Getting paginated orders", "page", page, "per_page", perPage)
+	
+	// Check if cache needs refresh
+	s.mutex.RLock()
+	needsRefresh := time.Since(s.lastFetched) > s.cacheDuration || len(s.cachedOrders) == 0
+	cacheSize := len(s.cachedOrders)
+	lastFetched := s.lastFetched
+	isRefreshing := s.refreshing
+	s.mutex.RUnlock()
+	
+	slog.Info("Cache status", 
+		"needs_refresh", needsRefresh,
+		"cache_size", cacheSize,
+		"last_fetched", lastFetched.Format("15:04:05"),
+		"cache_age_seconds", int(time.Since(lastFetched).Seconds()),
+		"is_refreshing", isRefreshing)
+	
+	// Refresh cache if needed (but don't refresh if already refreshing)
+	if needsRefresh && !isRefreshing {
+		slog.Info("Cache refresh needed, fetching fresh data")
+		if err := s.refreshCache(); err != nil {
+			slog.Error("Failed to refresh cache", "error", err)
+			// Continue with stale cache if available
+			if cacheSize == 0 {
+				return nil, fmt.Errorf("no cached data available and refresh failed: %w", err)
 			}
-			slog.Info("Sample unified order",
-				"index", i,
-				"order_number", order.OrderNumber,
-				"customer", order.Customer,
-				"total", order.Total,
-				"origin", order.Origin)
 		}
+	} else if needsRefresh && isRefreshing {
+		slog.Info("Cache refresh already in progress, using existing cache")
+	} else {
+		slog.Info("Using cached data", "cache_age_seconds", int(time.Since(lastFetched).Seconds()))
 	}
-
-	return unifiedOrders, nil
+	
+	// Paginate from cache
+	return s.paginateFromCache(page, perPage), nil
 }
 
-// GetUnifiedOrdersPaginated fetches and combines orders from both systems with pagination
-func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.PaginatedOrders, error) {
-	slog.Info("Starting to fetch paginated unified orders", "page", page, "per_page", perPage)
+// refreshCache fetches fresh data from both APIs and updates the cache
+func (s *OrderService) refreshCache() error {
+	s.mutex.Lock()
+	s.refreshing = true
+	s.mutex.Unlock()
 	
-	// For now, we'll fetch more orders than needed and paginate in memory
-	// In a production system, you'd want to implement proper API pagination
-	fetchLimit := perPage * 5 // Fetch more to ensure we have enough after merging
-
+	defer func() {
+		s.mutex.Lock()
+		s.refreshing = false
+		s.mutex.Unlock()
+	}()
+	
+	slog.Info("Starting cache refresh")
+	start := time.Now()
+	
 	var unifiedOrders []dto.UnifiedOrder
+	fetchLimit := 50 // Fetch more orders for better cache
 
 	// Fetch WooCommerce orders
-	slog.Info("Fetching WooCommerce orders", "limit", fetchLimit)
+	slog.Info("Fetching WooCommerce orders for cache", "limit", fetchLimit)
 	wooOrders, err := s.wooClient.ListOrders(&woo.OrderListOptions{
 		Page:    1,
 		PerPage: fetchLimit,
@@ -305,12 +273,9 @@ func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.Pagina
 		Order:   "desc",
 	})
 	if err != nil {
-		slog.Error("Error fetching WooCommerce orders", "error", err)
+		slog.Error("Error fetching WooCommerce orders for cache", "error", err)
 	} else {
-		slog.Info("WooCommerce orders fetched successfully", 
-			"count", len(wooOrders.Orders),
-			"total_available", wooOrders.Pagination.Total)
-		
+		slog.Info("WooCommerce orders fetched for cache", "count", len(wooOrders.Orders))
 		for _, order := range wooOrders.Orders {
 			unified := s.ConvertWooOrder(order)
 			unifiedOrders = append(unifiedOrders, unified)
@@ -318,14 +283,12 @@ func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.Pagina
 	}
 
 	// Fetch Orderspace orders
-	slog.Info("Fetching Orderspace orders", "limit", fetchLimit)
+	slog.Info("Fetching Orderspace orders for cache", "limit", fetchLimit)
 	orderspaceOrders, err := s.orderspaceClient.GetAllOrders(fetchLimit, "")
 	if err != nil {
-		slog.Error("Error fetching Orderspace orders", "error", err)
+		slog.Error("Error fetching Orderspace orders for cache", "error", err)
 	} else {
-		slog.Info("Orderspace orders fetched successfully", 
-			"count", len(orderspaceOrders.Orders))
-		
+		slog.Info("Orderspace orders fetched for cache", "count", len(orderspaceOrders.Orders))
 		for _, order := range orderspaceOrders.Orders {
 			unified := s.ConvertOrderspaceOrder(order)
 			unifiedOrders = append(unifiedOrders, unified)
@@ -333,13 +296,36 @@ func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.Pagina
 	}
 
 	// Sort all orders by date (most recent first)
-	slog.Info("Sorting unified orders by date (most recent first)")
 	sort.Slice(unifiedOrders, func(i, j int) bool {
 		return unifiedOrders[i].SortDate.After(unifiedOrders[j].SortDate)
 	})
 
-	totalOrders := len(unifiedOrders)
+	// Update cache
+	s.mutex.Lock()
+	s.cachedOrders = unifiedOrders
+	s.lastFetched = time.Now()
+	s.mutex.Unlock()
+	
+	duration := time.Since(start)
+	slog.Info("Cache refresh completed", 
+		"total_orders", len(unifiedOrders),
+		"duration_ms", duration.Milliseconds(),
+		"next_refresh", time.Now().Add(s.cacheDuration).Format("15:04:05"))
+
+	return nil
+}
+
+// paginateFromCache paginates the cached orders
+func (s *OrderService) paginateFromCache(page, perPage int) *dto.PaginatedOrders {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	
+	totalOrders := len(s.cachedOrders)
 	totalPages := (totalOrders + perPage - 1) / perPage
+	
+	if totalPages == 0 {
+		totalPages = 1
+	}
 	
 	// Calculate pagination bounds
 	start := (page - 1) * perPage
@@ -354,11 +340,11 @@ func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.Pagina
 	
 	// Slice the orders for this page
 	var pageOrders []dto.UnifiedOrder
-	if start < end {
-		pageOrders = unifiedOrders[start:end]
+	if start < end && start < len(s.cachedOrders) {
+		pageOrders = s.cachedOrders[start:end]
 	}
 
-	result := &dto.PaginatedOrders{
+	return &dto.PaginatedOrders{
 		Orders:      pageOrders,
 		CurrentPage: page,
 		TotalPages:  totalPages,
@@ -367,16 +353,48 @@ func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.Pagina
 		HasPrev:     page > 1,
 		HasNext:     page < totalPages,
 	}
+}
 
-	slog.Info("Pagination complete", 
-		"page", page,
-		"total_pages", totalPages,
-		"total_orders", totalOrders,
-		"orders_on_page", len(pageOrders),
-		"has_prev", result.HasPrev,
-		"has_next", result.HasNext)
+// startBackgroundRefresh starts a background goroutine to refresh cache periodically
+func (s *OrderService) startBackgroundRefresh() {
+	go func() {
+		// Initial fetch
+		slog.Info("Starting initial cache load")
+		if err := s.refreshCache(); err != nil {
+			slog.Error("Initial cache load failed", "error", err)
+		}
+		
+		// Set up periodic refresh
+		ticker := time.NewTicker(s.cacheDuration)
+		defer ticker.Stop()
+		
+		for range ticker.C {
+			slog.Info("Background cache refresh triggered")
+			if err := s.refreshCache(); err != nil {
+				slog.Error("Background cache refresh failed", "error", err)
+			}
+		}
+	}()
+}
 
-	return result, nil
+// RefreshCache manually refreshes the cache (for manual refresh button)
+func (s *OrderService) RefreshCache() error {
+	slog.Info("Manual cache refresh requested")
+	return s.refreshCache()
+}
+
+// GetCacheInfo returns information about the cache state
+func (s *OrderService) GetCacheInfo() map[string]interface{} {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	
+	return map[string]interface{}{
+		"cached_orders":    len(s.cachedOrders),
+		"last_fetched":     s.lastFetched.Format("2006-01-02 15:04:05"),
+		"cache_age_seconds": int(time.Since(s.lastFetched).Seconds()),
+		"next_refresh":     s.lastFetched.Add(s.cacheDuration).Format("15:04:05"),
+		"is_refreshing":    s.refreshing,
+	}
 }
 
 // Handler for the orders page
