@@ -2,23 +2,20 @@ package views
 
 import (
 	"strings"
+    "strconv"
 
 	"github.com/dukerupert/ironman/dto"
 )
 
 // Home page
-templ OrdersPage(orders []dto.UnifiedOrder) {
+templ OrdersPage(pagination dto.PaginatedOrders) {
 	@Layout() {
 		@Header()
-		@OrdersBody(orders)
+		<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+			@OrderStats(pagination.Orders)
+			@OrdersTableWithPagination(pagination)
+		</main>
 	}
-}
-
-templ OrdersBody(orders []dto.UnifiedOrder) {
-	<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-		@OrderStats(orders)
-		@OrdersTable(orders)
-	</main>
 }
 
 // Status badge component
@@ -28,22 +25,24 @@ templ StatusBadge(status string) {
 	</span>
 }
 
-// Orders table component
-templ OrdersTable(orders []dto.UnifiedOrder) {
+// Updated Orders table component with pagination info
+templ OrdersTableWithPagination(pagination dto.PaginatedOrders) {
 	<div class="px-4 sm:px-6 lg:px-8">
 		<div class="sm:flex sm:items-center">
 			<div class="sm:flex-auto">
 				<h1 class="text-base font-semibold text-gray-900">Recent Orders</h1>
-				<p class="mt-2 text-sm text-gray-700">Latest orders from all connected platforms including WooCommerce and Orderspace.</p>
+				<p class="mt-2 text-sm text-gray-700">
+					Showing { strconv.Itoa(len(pagination.Orders)) } of { strconv.Itoa(pagination.TotalOrders) } orders from all connected platforms.
+				</p>
 			</div>
 			<div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-				<button type="button" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+				<button type="button" onclick="window.location.reload()" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 					Refresh Orders
 				</button>
 			</div>
 		</div>
 		
-		if len(orders) == 0 {
+		if len(pagination.Orders) == 0 {
 			<div class="mt-8 text-center py-12">
 				<p class="text-gray-500">No orders found</p>
 			</div>
@@ -64,7 +63,7 @@ templ OrdersTable(orders []dto.UnifiedOrder) {
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-200 bg-white">
-						for _, order := range orders {
+						for _, order := range pagination.Orders {
 							<tr>
 								<td class="w-full max-w-0 py-4 pr-3 pl-4 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-0">
 									{ order.OrderNumber }
@@ -91,9 +90,16 @@ templ OrdersTable(orders []dto.UnifiedOrder) {
 									@StatusBadge(order.Status)
 								</td>
 								<td class="px-3 py-4 text-sm text-gray-500">
-									<span class={ getOriginBadgeClass(order.Origin) }>
-										{ order.Origin }
-									</span>
+									<!-- Mobile: Circle badge only -->
+									<div class="sm:hidden">
+										<div class={ getOriginCircleClass(order.Origin) + " w-4 h-4 rounded-full" } title={ order.Origin }></div>
+									</div>
+									<!-- Desktop: Full text badge -->
+									<div class="hidden sm:block">
+										<span class={ getOriginBadgeClass(order.Origin) }>
+											{ order.Origin }
+										</span>
+									</div>
 								</td>
 								<td class="py-4 pr-4 pl-3 text-right text-sm font-medium sm:pr-0">
 									<a href="#" class="text-indigo-600 hover:text-indigo-900">
@@ -105,8 +111,79 @@ templ OrdersTable(orders []dto.UnifiedOrder) {
 					</tbody>
 				</table>
 			</div>
+			
+			@Pagination(pagination)
 		}
 	</div>
+}
+
+// Pagination component
+templ Pagination(pagination dto.PaginatedOrders) {
+	if pagination.TotalPages > 1 {
+		<nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-6">
+			<div class="-mt-px flex w-0 flex-1">
+				if pagination.HasPrev {
+					<a href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage-1)) } class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="mr-3 size-5 text-gray-400">
+							<path d="M18 10a.75.75 0 0 1-.75.75H4.66l2.1 1.95a.75.75 0 1 1-1.02 1.1l-3.5-3.25a.75.75 0 0 1 0-1.1l3.5-3.25a.75.75 0 1 1 1.02 1.1l-2.1 1.95h12.59A.75.75 0 0 1 18 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+						</svg>
+						Previous
+					</a>
+				} else {
+					<span class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="mr-3 size-5 text-gray-300">
+							<path d="M18 10a.75.75 0 0 1-.75.75H4.66l2.1 1.95a.75.75 0 1 1-1.02 1.1l-3.5-3.25a.75.75 0 0 1 0-1.1l3.5-3.25a.75.75 0 1 1 1.02 1.1l-2.1 1.95h12.59A.75.75 0 0 1 18 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+						</svg>
+						Previous
+					</span>
+				}
+			</div>
+			
+			<!-- Page numbers (hidden on mobile) -->
+			<div class="hidden md:-mt-px md:flex">
+				@PageNumbers(pagination)
+			</div>
+			
+			<div class="-mt-px flex w-0 flex-1 justify-end">
+				if pagination.HasNext {
+					<a href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage+1)) } class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+						Next
+						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-3 size-5 text-gray-400">
+							<path d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+						</svg>
+					</a>
+				} else {
+					<span class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+						Next
+						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-3 size-5 text-gray-300">
+							<path d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+						</svg>
+					</span>
+				}
+			</div>
+		</nav>
+		
+		<!-- Mobile pagination info -->
+		<div class="mt-4 text-center md:hidden">
+			<p class="text-sm text-gray-700">
+				Page { strconv.Itoa(pagination.CurrentPage) } of { strconv.Itoa(pagination.TotalPages) } 
+				({ strconv.Itoa(pagination.TotalOrders) } total orders)
+			</p>
+		</div>
+	}
+}
+
+// PageNumbers component for rendering page links
+templ PageNumbers(pagination dto.PaginatedOrders) {
+	for _, pageData := range getPageNumbersData(pagination.CurrentPage, pagination.TotalPages) {
+		if pageData.IsCurrent {
+			<a href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } aria-current="page" class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600">{ strconv.Itoa(pageData.Page) }</a>
+		} else if pageData.IsEllipsis {
+			<span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+		} else {
+			<a href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">{ strconv.Itoa(pageData.Page) }</a>
+		}
+	}
 }
 
 // Stats component

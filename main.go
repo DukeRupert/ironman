@@ -5,12 +5,11 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	// "github.com/dukerupert/ironman/orderspace"
-	// "github.com/dukerupert/ironman/woo"
 	"github.com/dukerupert/ironman/dto"
 	"github.com/dukerupert/ironman/orderspace"
 	"github.com/dukerupert/ironman/views"
@@ -19,6 +18,8 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type ClientConfig struct {
@@ -71,6 +72,7 @@ func LoadConfig() (*ClientConfig, error) {
 type OrderService struct {
 	wooClient        *woo.Client
 	orderspaceClient *orderspace.Client
+	titleCaser       cases.Caser
 }
 
 // NewOrderService creates a new order service
@@ -87,9 +89,13 @@ func NewOrderService(config ClientConfig) *OrderService {
 		config.OrderspaceClientSecret,
 	)
 
+	// Create a title caser for English
+	titleCaser := cases.Title(language.English)
+
 	return &OrderService{
 		wooClient:        wooClient,
 		orderspaceClient: orderspaceClient,
+		titleCaser:       titleCaser,
 	}
 }
 
@@ -120,10 +126,17 @@ func (s *OrderService) ConvertWooOrder(order woo.Order) dto.UnifiedOrder {
 		total = 0
 	}
 
-	// Format date
+	// Parse date for sorting
+	sortDate, err := time.Parse("2006-01-02T15:04:05", order.DateCreated)
+	if err != nil {
+		slog.Warn("Failed to parse WooCommerce date for sorting", "date", order.DateCreated, "error", err)
+		sortDate = time.Now() // Fallback to current time
+	}
+
+	// Format date for display
 	orderDate := order.DateCreated
-	if parsed, err := time.Parse("2006-01-02T15:04:05", order.DateCreated); err == nil {
-		orderDate = parsed.Format("Jan 2, 2006")
+	if err == nil {
+		orderDate = sortDate.Format("Jan 2, 2006")
 	}
 
 	return dto.UnifiedOrder{
@@ -132,7 +145,9 @@ func (s *OrderService) ConvertWooOrder(order woo.Order) dto.UnifiedOrder {
 		OrderDate:   orderDate,
 		DeliverOn:   "N/A",
 		Total:       FormatCurrency(total, order.Currency),
+		Status:      s.titleCaser.String(order.Status),
 		Origin:      "WooCommerce",
+		SortDate:    sortDate,
 	}
 }
 
@@ -143,10 +158,17 @@ func (s *OrderService) ConvertOrderspaceOrder(order orderspace.Order) dto.Unifie
 		customer = order.BillingAddress.ContactName
 	}
 
-	// Format dates
+	// Parse date for sorting
+	sortDate, err := time.Parse("2006-01-02T15:04:05Z", order.Created)
+	if err != nil {
+		slog.Warn("Failed to parse Orderspace date for sorting", "date", order.Created, "error", err)
+		sortDate = time.Now() // Fallback to current time
+	}
+
+	// Format date for display
 	orderDate := order.Created
-	if parsed, err := time.Parse("2006-01-02T15:04:05Z", order.Created); err == nil {
-		orderDate = parsed.Format("Jan 2, 2006")
+	if err == nil {
+		orderDate = sortDate.Format("Jan 2, 2006")
 	}
 
 	deliverOn := "N/A"
@@ -164,8 +186,9 @@ func (s *OrderService) ConvertOrderspaceOrder(order orderspace.Order) dto.Unifie
 		OrderDate:   orderDate,
 		DeliverOn:   deliverOn,
 		Total:       FormatCurrency(order.GrossTotal, order.Currency),
-		Status:      strings.Title(order.Status),
+		Status:      s.titleCaser.String(order.Status),
 		Origin:      "Orderspace",
+		SortDate:    sortDate,
 	}
 }
 
@@ -236,6 +259,12 @@ func (s *OrderService) GetUnifiedOrders() ([]dto.UnifiedOrder, error) {
 		"woo_orders", len(wooOrders.Orders),
 		"orderspace_orders", len(orderspaceOrders.Orders))
 
+	// Sort all orders by date (most recent first)
+	slog.Info("Sorting unified orders by date (most recent first)")
+	sort.Slice(unifiedOrders, func(i, j int) bool {
+		return unifiedOrders[i].SortDate.After(unifiedOrders[j].SortDate)
+	})
+
 	// Log the final unified orders for debugging
 	if len(unifiedOrders) == 0 {
 		slog.Warn("No unified orders found - both systems returned empty or failed")
@@ -257,19 +286,132 @@ func (s *OrderService) GetUnifiedOrders() ([]dto.UnifiedOrder, error) {
 	return unifiedOrders, nil
 }
 
+// GetUnifiedOrdersPaginated fetches and combines orders from both systems with pagination
+func (s *OrderService) GetUnifiedOrdersPaginated(page, perPage int) (*dto.PaginatedOrders, error) {
+	slog.Info("Starting to fetch paginated unified orders", "page", page, "per_page", perPage)
+	
+	// For now, we'll fetch more orders than needed and paginate in memory
+	// In a production system, you'd want to implement proper API pagination
+	fetchLimit := perPage * 5 // Fetch more to ensure we have enough after merging
+
+	var unifiedOrders []dto.UnifiedOrder
+
+	// Fetch WooCommerce orders
+	slog.Info("Fetching WooCommerce orders", "limit", fetchLimit)
+	wooOrders, err := s.wooClient.ListOrders(&woo.OrderListOptions{
+		Page:    1,
+		PerPage: fetchLimit,
+		OrderBy: "date",
+		Order:   "desc",
+	})
+	if err != nil {
+		slog.Error("Error fetching WooCommerce orders", "error", err)
+	} else {
+		slog.Info("WooCommerce orders fetched successfully", 
+			"count", len(wooOrders.Orders),
+			"total_available", wooOrders.Pagination.Total)
+		
+		for _, order := range wooOrders.Orders {
+			unified := s.ConvertWooOrder(order)
+			unifiedOrders = append(unifiedOrders, unified)
+		}
+	}
+
+	// Fetch Orderspace orders
+	slog.Info("Fetching Orderspace orders", "limit", fetchLimit)
+	orderspaceOrders, err := s.orderspaceClient.GetAllOrders(fetchLimit, "")
+	if err != nil {
+		slog.Error("Error fetching Orderspace orders", "error", err)
+	} else {
+		slog.Info("Orderspace orders fetched successfully", 
+			"count", len(orderspaceOrders.Orders))
+		
+		for _, order := range orderspaceOrders.Orders {
+			unified := s.ConvertOrderspaceOrder(order)
+			unifiedOrders = append(unifiedOrders, unified)
+		}
+	}
+
+	// Sort all orders by date (most recent first)
+	slog.Info("Sorting unified orders by date (most recent first)")
+	sort.Slice(unifiedOrders, func(i, j int) bool {
+		return unifiedOrders[i].SortDate.After(unifiedOrders[j].SortDate)
+	})
+
+	totalOrders := len(unifiedOrders)
+	totalPages := (totalOrders + perPage - 1) / perPage
+	
+	// Calculate pagination bounds
+	start := (page - 1) * perPage
+	end := start + perPage
+	
+	if start >= totalOrders {
+		start = totalOrders
+	}
+	if end > totalOrders {
+		end = totalOrders
+	}
+	
+	// Slice the orders for this page
+	var pageOrders []dto.UnifiedOrder
+	if start < end {
+		pageOrders = unifiedOrders[start:end]
+	}
+
+	result := &dto.PaginatedOrders{
+		Orders:      pageOrders,
+		CurrentPage: page,
+		TotalPages:  totalPages,
+		TotalOrders: totalOrders,
+		PerPage:     perPage,
+		HasPrev:     page > 1,
+		HasNext:     page < totalPages,
+	}
+
+	slog.Info("Pagination complete", 
+		"page", page,
+		"total_pages", totalPages,
+		"total_orders", totalOrders,
+		"orders_on_page", len(pageOrders),
+		"has_prev", result.HasPrev,
+		"has_next", result.HasNext)
+
+	return result, nil
+}
+
 // Handler for the orders page
 func (s *OrderService) HandleOrders(c echo.Context) error {
 	slog.Info("Orders page requested", "path", c.Request().URL.Path)
 	
-	orders, err := s.GetUnifiedOrders()
+	// Get pagination parameters from query string
+	pageParam := c.QueryParam("page")
+	page := 1
+	if pageParam != "" {
+		if p, err := strconv.Atoi(pageParam); err == nil && p > 0 {
+			page = p
+		}
+	}
+	
+	perPageParam := c.QueryParam("per_page")
+	perPage := 10 // Default per page
+	if perPageParam != "" {
+		if pp, err := strconv.Atoi(perPageParam); err == nil && pp > 0 && pp <= 100 {
+			perPage = pp
+		}
+	}
+	
+	slog.Info("Pagination parameters", "page", page, "per_page", perPage)
+	
+	paginatedOrders, err := s.GetUnifiedOrdersPaginated(page, perPage)
 	if err != nil {
 		slog.Error("Error in HandleOrders", "error", err)
 		return c.String(http.StatusInternalServerError, "Error fetching orders: "+err.Error())
 	}
 
-	slog.Info("Rendering orders page", "order_count", len(orders))
-	page := views.OrdersPage(orders)
-	return page.Render(c.Request().Context(), c.Response())
+	slog.Info("Rendering orders page", "order_count", len(paginatedOrders.Orders))
+
+	ordersPage := views.OrdersPage(*paginatedOrders)
+	return ordersPage.Render(c.Request().Context(), c.Response())
 }
 
 // Example usage function
