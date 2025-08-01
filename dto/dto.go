@@ -4,16 +4,17 @@ package dto
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
-// UnifiedOrder represents an order from either system
+// UnifiedOrder represents an order from either system for display
 type UnifiedOrder struct {
-	ID       string
-	Date     time.Time
-	Total    float64
-	Currency string
-	Origin   string
+	OrderNumber string
+	Customer    string
+	OrderDate   string
+	DeliverOn   string
+	Total       string
+	Status      string
+	Origin      string
 }
 
 // FormatCurrency formats the currency amount based on the currency

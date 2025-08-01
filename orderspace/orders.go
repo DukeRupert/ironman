@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-
-	"github.com/dukerupert/ironman/dto"
 )
 
 // Order represents an Orderspace order
@@ -265,21 +262,4 @@ func (c *Client) GetOrdersInDateRange(createdSince, createdUntil string, limit i
 // GetLast10Orders is a convenience method to get the last 10 orders
 func (c *Client) GetLast10Orders() (*OrdersResponse, error) {
 	return c.GetAllOrders(10, "")
-}
-
-// ParseOrderspaceOrder converts an Orderspace order to UnifiedOrder
-func ParseOrderspaceOrder(order Order) (dto.UnifiedOrder, error) {
-	// Parse the date (Orderspace uses ISO 8601 with Z suffix)
-	date, err := time.Parse("2006-01-02T15:04:05Z", order.Created)
-	if err != nil {
-		return dto.UnifiedOrder{}, fmt.Errorf("failed to parse Orderspace date: %w", err)
-	}
-
-	return dto.UnifiedOrder{
-		ID:       order.ID,
-		Date:     date,
-		Total:    order.GrossTotal,
-		Currency: order.Currency,
-		Origin:   "Orderspace",
-	}, nil
 }

@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
-
-	"github.com/dukerupert/ironman/dto"
 )
 
 // Order represents a WooCommerce order
@@ -413,27 +409,4 @@ func (c *Client) GetLastOrders(count int) (*OrdersResponse, error) {
 // GetLast10Orders is a convenience method to get the last 10 orders
 func (c *Client) GetLast10Orders() (*OrdersResponse, error) {
 	return c.GetLastOrders(10)
-}
-
-// ParseWooOrder converts a WooCommerce order to UnifiedOrder
-func ParseWooOrder(order Order) (dto.UnifiedOrder, error) {
-	// Parse the date
-	date, err := time.Parse("2006-01-02T15:04:05", order.DateCreated)
-	if err != nil {
-		return dto.UnifiedOrder{}, fmt.Errorf("failed to parse WooCommerce date: %w", err)
-	}
-
-	// Parse the total (WooCommerce returns total as string)
-	total, err := strconv.ParseFloat(order.Total, 64)
-	if err != nil {
-		return dto.UnifiedOrder{}, fmt.Errorf("failed to parse WooCommerce total: %w", err)
-	}
-
-	return dto.UnifiedOrder{
-		ID:       strconv.Itoa(order.ID),
-		Date:     date,
-		Total:    total,
-		Currency: order.Currency,
-		Origin:   "WooCommerce",
-	}, nil
 }
