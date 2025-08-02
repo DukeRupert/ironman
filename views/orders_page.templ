@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/dukerupert/ironman/dto"
+	"fmt"
 )
 
 // Home page
@@ -101,7 +102,7 @@ templ OrdersTableWithPagination(pagination dto.PagePaginatedOrders) {
 									</div>
 								</td>
 								<td class="py-4 pr-4 pl-3 text-right text-sm font-medium sm:pr-0">
-									<a href="#" class="text-indigo-600 hover:text-indigo-900">
+									<a href={fmt.Sprintf("/orders/%s", order.OrderNumber)} class="text-indigo-600 hover:text-indigo-900">
 										View<span class="sr-only">, { order.OrderNumber }</span>
 									</a>
 								</td>

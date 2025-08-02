@@ -186,7 +186,7 @@ func (s *Service) ConvertWooOrder(order woo.Order) UnifiedOrder {
 	}
 
 	return UnifiedOrder{
-		OrderNumber: "#" + strconv.Itoa(order.ID),
+		OrderNumber: "woo_" + strconv.Itoa(order.ID),
 		Customer:    customer,
 		OrderDate:   orderDate,
 		DeliverOn:   "N/A",
@@ -227,7 +227,7 @@ func (s *Service) ConvertOrderspaceOrder(order orderspace.Order) UnifiedOrder {
 	}
 
 	return UnifiedOrder{
-		OrderNumber: "#" + strconv.Itoa(order.Number),
+		OrderNumber: "ord_" + strconv.Itoa(order.Number),
 		Customer:    customer,
 		OrderDate:   orderDate,
 		DeliverOn:   deliverOn,

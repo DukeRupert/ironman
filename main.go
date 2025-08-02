@@ -58,6 +58,7 @@ func main() {
 	})
 
 	e.GET("/orders", orderService.HandleOrders)
+	e.GET("/orders/:id", orderService.HandleOrder)
 	e.POST("/refresh-orders", func(c echo.Context) error {
 		slog.Info("Manual refresh requested")
 		if err := orderService.RefreshCache(); err != nil {
