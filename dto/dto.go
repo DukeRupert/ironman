@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// UnifiedOrder represents an order from either system for display
-type UnifiedOrder struct {
+type PageOrder struct {
 	OrderNumber string
 	Customer    string
 	OrderDate   string
@@ -16,12 +15,12 @@ type UnifiedOrder struct {
 	Total       string
 	Status      string
 	Origin      string
-	SortDate    time.Time // For sorting purposes
+	SortDate    time.Time // Added for sorting purposes
 }
 
 // PaginatedOrders represents paginated order results
-type PaginatedOrders struct {
-	Orders      []UnifiedOrder
+type PagePaginatedOrders struct {
+	Orders      []PageOrder
 	CurrentPage int
 	TotalPages  int
 	TotalOrders int
@@ -29,6 +28,7 @@ type PaginatedOrders struct {
 	HasPrev     bool
 	HasNext     bool
 }
+
 
 // PageData represents a page link or ellipsis in pagination
 type PageData struct {

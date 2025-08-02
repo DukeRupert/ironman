@@ -1,14 +1,14 @@
 package views
 
 import (
+	"strconv"
 	"strings"
-    "strconv"
 
 	"github.com/dukerupert/ironman/dto"
 )
 
 // Home page
-templ OrdersPage(pagination dto.PaginatedOrders) {
+templ OrdersPage(pagination dto.PagePaginatedOrders) {
 	@Layout() {
 		@Header()
 		<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -26,8 +26,8 @@ templ StatusBadge(status string) {
 }
 
 // Updated Orders table component with pagination info
-templ OrdersTableWithPagination(pagination dto.PaginatedOrders) {
-	<div class="px-4 sm:px-6 lg:px-8">
+templ OrdersTableWithPagination(pagination dto.PagePaginatedOrders) {
+	<div id="orders-container" class="px-4 sm:px-6 lg:px-8">
 		<div class="sm:flex sm:items-center">
 			<div class="sm:flex-auto">
 				<h1 class="text-base font-semibold text-gray-900">Recent Orders</h1>
@@ -36,12 +36,11 @@ templ OrdersTableWithPagination(pagination dto.PaginatedOrders) {
 				</p>
 			</div>
 			<div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-				<button type="button" onclick="window.location.reload()" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-					Refresh Orders
+				<button type="button" onclick="refreshOrders()" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+					<span id="refresh-text">Refresh Orders</span>
 				</button>
 			</div>
 		</div>
-		
 		if len(pagination.Orders) == 0 {
 			<div class="mt-8 text-center py-12">
 				<p class="text-gray-500">No orders found</p>
@@ -111,22 +110,30 @@ templ OrdersTableWithPagination(pagination dto.PaginatedOrders) {
 					</tbody>
 				</table>
 			</div>
-			
 			@Pagination(pagination)
 		}
 	</div>
 }
 
-// Pagination component
-templ Pagination(pagination dto.PaginatedOrders) {
+// Pagination component with HTMX
+templ Pagination(pagination dto.PagePaginatedOrders) {
 	if pagination.TotalPages > 1 {
 		<nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-6">
 			<div class="-mt-px flex w-0 flex-1">
 				if pagination.HasPrev {
-					<a href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage-1)) } class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+					<a 
+						href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage-1)) }
+						hx-get={ "/orders?page=" + strconv.Itoa(pagination.CurrentPage-1) }
+						hx-target="#orders-container"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+						class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
 						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="mr-3 size-5 text-gray-400">
 							<path d="M18 10a.75.75 0 0 1-.75.75H4.66l2.1 1.95a.75.75 0 1 1-1.02 1.1l-3.5-3.25a.75.75 0 0 1 0-1.1l3.5-3.25a.75.75 0 1 1 1.02 1.1l-2.1 1.95h12.59A.75.75 0 0 1 18 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
 						</svg>
+						<span class="htmx-indicator">
+							<div class="spinner mr-2"></div>
+						</span>
 						Previous
 					</a>
 				} else {
@@ -141,12 +148,45 @@ templ Pagination(pagination dto.PaginatedOrders) {
 			
 			<!-- Page numbers (hidden on mobile) -->
 			<div class="hidden md:-mt-px md:flex">
-				@PageNumbers(pagination)
+				for _, pageData := range getPageNumbersData(pagination.CurrentPage, pagination.TotalPages) {
+					if pageData.IsCurrent {
+						<a 
+							href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } 
+							aria-current="page" 
+							class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600">
+							{ strconv.Itoa(pageData.Page) }
+						</a>
+					} else if pageData.IsEllipsis {
+						<span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+					} else {
+						<a 
+							href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) }
+							hx-get={ "/orders?page=" + strconv.Itoa(pageData.Page) }
+							hx-target="#orders-container"
+							hx-swap="outerHTML"
+							hx-push-url="true"
+							class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+							<span class="htmx-indicator">
+								<div class="spinner mr-1"></div>
+							</span>
+							{ strconv.Itoa(pageData.Page) }
+						</a>
+					}
+				}
 			</div>
 			
 			<div class="-mt-px flex w-0 flex-1 justify-end">
 				if pagination.HasNext {
-					<a href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage+1)) } class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+					<a 
+						href={ templ.URL("?page=" + strconv.Itoa(pagination.CurrentPage+1)) }
+						hx-get={ "/orders?page=" + strconv.Itoa(pagination.CurrentPage+1) }
+						hx-target="#orders-container"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+						class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+						<span class="htmx-indicator">
+							<div class="spinner mr-2"></div>
+						</span>
 						Next
 						<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-3 size-5 text-gray-400">
 							<path d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
@@ -173,21 +213,38 @@ templ Pagination(pagination dto.PaginatedOrders) {
 	}
 }
 
-// PageNumbers component for rendering page links
-templ PageNumbers(pagination dto.PaginatedOrders) {
+templ PageNumbers(pagination dto.PagePaginatedOrders) {
 	for _, pageData := range getPageNumbersData(pagination.CurrentPage, pagination.TotalPages) {
 		if pageData.IsCurrent {
-			<a href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } aria-current="page" class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600">{ strconv.Itoa(pageData.Page) }</a>
+			<a 
+				href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } 
+				aria-current="page" 
+				class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600">
+				{ strconv.Itoa(pageData.Page) }
+			</a>
 		} else if pageData.IsEllipsis {
-			<span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+			<span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
+				...
+			</span>
 		} else {
-			<a href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) } class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">{ strconv.Itoa(pageData.Page) }</a>
+			<a 
+				href={ templ.URL("?page=" + strconv.Itoa(pageData.Page)) }
+				hx-get={ "/orders?page=" + strconv.Itoa(pageData.Page) }
+				hx-target="#orders-container"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+				class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+				<span class="htmx-indicator">
+					<div class="spinner mr-1"></div>
+				</span>
+				{ strconv.Itoa(pageData.Page) }
+			</a>
 		}
 	}
 }
 
 // Stats component
-templ OrderStats(orders []dto.UnifiedOrder) {
+templ OrderStats(orders []dto.PageOrder) {
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 		<div class="bg-white overflow-hidden shadow rounded-lg">
 			<div class="p-5">
@@ -206,7 +263,6 @@ templ OrderStats(orders []dto.UnifiedOrder) {
 				</div>
 			</div>
 		</div>
-
 		<div class="bg-white overflow-hidden shadow rounded-lg">
 			<div class="p-5">
 				<div class="flex items-center">
@@ -224,7 +280,6 @@ templ OrderStats(orders []dto.UnifiedOrder) {
 				</div>
 			</div>
 		</div>
-
 		<div class="bg-white overflow-hidden shadow rounded-lg">
 			<div class="p-5">
 				<div class="flex items-center">
