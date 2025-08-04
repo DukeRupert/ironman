@@ -24,6 +24,7 @@ type Service struct {
 	wooClient        *woo.Client
 	orderspaceClient *orderspace.Client
 	titleCaser       cases.Caser
+	OrderSpaceClient *orderspace.Client
 
 	// Cache fields
 	cachedOrders  []UnifiedOrder
@@ -35,6 +36,7 @@ type Service struct {
 
 // UnifiedOrder represents an order from either system for display
 type UnifiedOrder struct {
+	ID          string
 	OrderNumber string
 	Customer    string
 	OrderDate   string
@@ -64,23 +66,24 @@ type PageData struct {
 }
 
 type ClientConfig struct {
-	OrderspaceBaseUrl      string
+	OrderspaceBaseURL      string
 	OrderspaceClientID     string
 	OrderspaceClientSecret string
-	WooBaseUrl             string
+	WooBaseURL             string
 	WooConsumerKey         string
 	WooConsumerSecret      string
 }
 
 func loadConfig() (*ClientConfig, error) {
-	// Set config file name and path
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./config")
-
 	// Enable automatic environment variable reading
 	viper.AutomaticEnv()
+
+	// Set the config file name (without extension) and type
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env") // Specify "env" for .env files
+
+	// Add the path where the .env file is located (e.g., current directory)
+	viper.AddConfigPath(".")
 
 	// Bind environment variables to config keys
 	viper.BindEnv("orderspace_base_url", "ORDERSPACE_BASE_URL")
@@ -90,18 +93,23 @@ func loadConfig() (*ClientConfig, error) {
 	viper.BindEnv("woo_consumer_key", "WOO_CONSUMER_KEY")
 	viper.BindEnv("woo_consumer_secret", "WOO_CONSUMER_SECRET")
 
-	// Read config file (optional - env vars will override)
+	// Read the configuration
 	if err := viper.ReadInConfig(); err != nil {
-		// It's okay if config file doesn't exist, env vars can provide all values
-		log.Printf("Config file not found or error reading: %v", err)
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; ignore error if .env is optional
+			log.Println("No .env file found, relying on environment variables or defaults.")
+		} else {
+			// Handle other errors reading the config file
+			log.Fatalf("Error reading config file: %s", err)
+		}
 	}
 
 	// Create and populate the config struct
 	config := &ClientConfig{
-		OrderspaceBaseUrl:      viper.GetString("orderspace_base_url"),
+		OrderspaceBaseURL:      viper.GetString("orderspace_base_url"),
 		OrderspaceClientID:     viper.GetString("orderspace_client_id"),
 		OrderspaceClientSecret: viper.GetString("orderspace_client_secret"),
-		WooBaseUrl:             viper.GetString("woo_base_url"),
+		WooBaseURL:             viper.GetString("woo_base_url"),
 		WooConsumerKey:         viper.GetString("woo_consumer_key"),
 		WooConsumerSecret:      viper.GetString("woo_consumer_secret"),
 	}
@@ -117,13 +125,13 @@ func NewService() *Service {
 	}
 
 	wooClient := woo.NewClient(
-		config.WooBaseUrl,
+		config.WooBaseURL,
 		config.WooConsumerKey,
 		config.WooConsumerSecret,
 	)
 
 	orderspaceClient := orderspace.NewClient(
-		config.OrderspaceBaseUrl,
+		config.OrderspaceBaseURL,
 		config.OrderspaceClientID,
 		config.OrderspaceClientSecret,
 	)
@@ -134,6 +142,7 @@ func NewService() *Service {
 	service := &Service{
 		wooClient:        wooClient,
 		orderspaceClient: orderspaceClient,
+		OrderSpaceClient: orderspaceClient,
 		titleCaser:       titleCaser,
 		cacheDuration:    5 * time.Minute, // Cache for 5 minutes
 	}
@@ -186,6 +195,7 @@ func (s *Service) ConvertWooOrder(order woo.Order) UnifiedOrder {
 	}
 
 	return UnifiedOrder{
+		ID:          strconv.Itoa(order.ID),
 		OrderNumber: "woo_" + strconv.Itoa(order.ID),
 		Customer:    customer,
 		OrderDate:   orderDate,
@@ -227,6 +237,7 @@ func (s *Service) ConvertOrderspaceOrder(order orderspace.Order) UnifiedOrder {
 	}
 
 	return UnifiedOrder{
+		ID:          order.ID,
 		OrderNumber: "ord_" + strconv.Itoa(order.Number),
 		Customer:    customer,
 		OrderDate:   orderDate,

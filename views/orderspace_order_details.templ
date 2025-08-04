@@ -1,0 +1,388 @@
+package views
+
+import (
+"fmt"
+"strconv"
+"strings"
+"time"
+
+"github.com/dukerupert/ironman/orderspace"
+)
+
+// OrderDetailPage displays the full order details
+templ OrderDetailPage(order orderspace.Order) {
+@Layout() {
+@Header()
+<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+  @OrderDetailView(order)
+</main>
+}
+}
+
+// OrderDetailView is the main order detail component that can be swapped via HTMX
+templ OrderDetailView(order orderspace.Order) {
+<div id="order-detail-container" class="space-y-6">
+  <!-- Header with back button -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <button onclick="history.back()"
+        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <svg class="-ml-0.5 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Back to Orders
+      </button>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Order #{ strconv.Itoa(order.Number) }</h1>
+        <p class="text-sm text-gray-500">{ formatOrderDate(order.Created) }</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      @OrderStatusBadge(order.Status)
+      <span class={ getOriginBadgeClass("Orderspace") }>Orderspace</span>
+    </div>
+  </div>
+  <!-- Order Summary Cards -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Customer Information -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Customer Information</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Company</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.CompanyName }</dd>
+          </div>
+          if order.Phone != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Phone</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.Phone }</dd>
+          </div>
+          }
+          if order.EmailAddresses.Orders != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Email</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.EmailAddresses.Orders }</dd>
+          </div>
+          }
+          if order.Reference != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Reference</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.Reference }</dd>
+          </div>
+          }
+          if order.CustomerPONumber != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">PO Number</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.CustomerPONumber }</dd>
+          </div>
+          }
+        </dl>
+      </div>
+    </div>
+    <!-- Order Details -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Order Details</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Order Date</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ formatOrderDate(order.Created) }</dd>
+          </div>
+          if order.DeliveryDate != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Delivery Date</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ formatDeliveryDate(order.DeliveryDate) }</dd>
+          </div>
+          }
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Shipping Method</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.ShippingType }</dd>
+          </div>
+          if order.CreatedBy != "" {
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Created By</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ order.CreatedBy }</dd>
+          </div>
+          }
+        </dl>
+      </div>
+    </div>
+    <!-- Order Totals -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Order Total</h3>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Net Total</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ formatCurrency(order.NetTotal, order.Currency) }</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Tax</dt>
+            <dd class="mt-1 text-sm text-gray-900">{ formatCurrency(order.GrossTotal - order.NetTotal, order.Currency) }
+            </dd>
+          </div>
+          <div class="pt-3 border-t border-gray-200">
+            <dt class="text-base font-medium text-gray-900">Gross Total</dt>
+            <dd class="mt-1 text-lg font-semibold text-gray-900">{ formatCurrency(order.GrossTotal, order.Currency) }
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <!-- Addresses -->
+  if !isAddressEmpty(order.ShippingAddress) || !isAddressEmpty(order.BillingAddress) {
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <!-- Shipping Address -->
+    if !isAddressEmpty(order.ShippingAddress) {
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Shipping Address</h3>
+        @AddressDisplay(order.ShippingAddress)
+      </div>
+    </div>
+    }
+    <!-- Billing Address -->
+    if !isAddressEmpty(order.BillingAddress) {
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Billing Address</h3>
+        @AddressDisplay(order.BillingAddress)
+      </div>
+    </div>
+    }
+  </div>
+  }
+  <!-- Order Lines -->
+  if len(order.OrderLines) > 0 {
+  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Order Items</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">{ strconv.Itoa(len(order.OrderLines)) } items in this order</p>
+    </div>
+    <div class="border-t border-gray-200">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Product</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Quantity</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Unit Price</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tax</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            for _, line := range order.OrderLines {
+            <tr>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <div class="text-sm font-medium text-gray-900">{ line.Name }</div>
+                  if line.SKU != "" {
+                  <div class="text-sm text-gray-500">SKU: { line.SKU }</div>
+                  }
+                  if line.Options != "" {
+                  <div class="text-sm text-gray-500">{ line.Options }</div>
+                  }
+                  if line.GroupingCategory.Name != "" {
+                  <div class="text-xs text-gray-400">Category: { line.GroupingCategory.Name }</div>
+                  }
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right text-sm text-gray-900">{ strconv.Itoa(line.Quantity) }</td>
+              <td class="px-6 py-4 text-right text-sm text-gray-900">{ formatCurrency(line.UnitPrice, order.Currency) }
+              </td>
+              <td class="px-6 py-4 text-right text-sm text-gray-900">
+                if line.TaxAmount > 0 {
+                <div>{ formatCurrency(line.TaxAmount, order.Currency) }</div>
+                if line.TaxName != "" {
+                <div class="text-xs text-gray-500">({ line.TaxName })</div>
+                }
+                } else {
+                <span class="text-gray-400">-</span>
+                }
+              </td>
+              <td class="px-6 py-4 text-right text-sm font-medium text-gray-900">{ formatCurrency(line.SubTotal +
+                line.TaxAmount, order.Currency) }</td>
+              <td class="px-6 py-4">
+                @OrderLineStatus(line)
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  }
+  <!-- Notes Section -->
+  if order.CustomerNote != "" || order.InternalNote != "" {
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    if order.CustomerNote != "" {
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-3">Customer Note</h3>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{ order.CustomerNote }</p>
+      </div>
+    </div>
+    }
+    if order.InternalNote != "" {
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-3">Internal Note</h3>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{ order.InternalNote }</p>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>
+}
+
+// AddressDisplay component for rendering addresses
+templ AddressDisplay(address orderspace.OrderAddress) {
+<div class="space-y-1 text-sm">
+  if address.CompanyName != "" {
+  <div class="font-medium">{ address.CompanyName }</div>
+  }
+  if address.ContactName != "" {
+  <div>{ address.ContactName }</div>
+  }
+  if address.Line1 != "" {
+  <div>{ address.Line1 }</div>
+  }
+  if address.Line2 != "" {
+  <div>{ address.Line2 }</div>
+  }
+  <div>
+    if address.City != "" {
+    <span>{ address.City }</span>
+    }
+    if address.State != "" && address.City != "" {
+    <span>, { address.State }</span>
+    } else if address.State != "" {
+    <span>{ address.State }</span>
+    }
+    if address.PostalCode != "" {
+    <span>{ address.PostalCode }</span>
+    }
+  </div>
+  if address.Country != "" {
+  <div>{ address.Country }</div>
+  }
+</div>
+}
+
+// OrderStatusBadge component for order status
+templ OrderStatusBadge(status string) {
+<span class={ "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium " + getStatusBadgeClass(status)
+  }>
+  { strings.Title(strings.ToLower(status)) }
+</span>
+}
+
+// OrderLineStatus component for individual line item status
+templ OrderLineStatus(line orderspace.OrderLine) {
+<div class="space-y-1">
+  if line.OnHold {
+  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+    On Hold
+  </span>
+  }
+  if line.Invoiced > 0 {
+  <div class="text-xs text-gray-600">
+    Invoiced: { strconv.Itoa(line.Invoiced) }/{ strconv.Itoa(line.Quantity) }
+  </div>
+  }
+  if line.Dispatched > 0 {
+  <div class="text-xs text-gray-600">
+    Dispatched: { strconv.Itoa(line.Dispatched) }/{ strconv.Itoa(line.Quantity) }
+  </div>
+  }
+  if line.Paid > 0 {
+  <div class="text-xs text-gray-600">
+    Paid: { strconv.Itoa(line.Paid) }/{ strconv.Itoa(line.Quantity) }
+  </div>
+  }
+</div>
+}
+
+// Helper functions (these would typically go in a separate helpers file)
+func formatCurrency(amount float64, currency string) string {
+switch strings.ToUpper(currency) {
+case "USD":
+return fmt.Sprintf("$%.2f", amount)
+case "GBP":
+return fmt.Sprintf("£%.2f", amount)
+case "EUR":
+return fmt.Sprintf("€%.2f", amount)
+default:
+return fmt.Sprintf("%.2f %s", amount, currency)
+}
+}
+
+func formatOrderDate(dateStr string) string {
+if dateStr == "" {
+return ""
+}
+
+// Parse the ISO 8601 date
+t, err := time.Parse("2006-01-02T15:04:05Z", dateStr)
+if err != nil {
+return dateStr // Return original if parsing fails
+}
+
+return t.Format("January 2, 2006 at 3:04 PM")
+}
+
+func formatDeliveryDate(dateStr string) string {
+if dateStr == "" {
+return ""
+}
+
+// Parse the date (assuming YYYY-MM-DD format)
+t, err := time.Parse("2006-01-02", dateStr)
+if err != nil {
+return dateStr // Return original if parsing fails
+}
+
+return t.Format("January 2, 2006")
+}
+
+func isAddressEmpty(address orderspace.OrderAddress) bool {
+return address.CompanyName == "" &&
+address.ContactName == "" &&
+address.Line1 == "" &&
+address.City == ""
+}
+
+func getStatusBadgeClass(status string) string {
+switch strings.ToLower(status) {
+case "new":
+return "bg-purple-100 text-purple-800"
+case "confirmed":
+return "bg-blue-100 text-blue-800"
+case "processing":
+return "bg-yellow-100 text-yellow-800"
+case "dispatched":
+return "bg-green-100 text-green-800"
+case "delivered":
+return "bg-green-100 text-green-800"
+case "cancelled":
+return "bg-red-100 text-red-800"
+case "on hold":
+return "bg-gray-100 text-gray-800"
+default:
+return "bg-gray-100 text-gray-800"
+}
+}

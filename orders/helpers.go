@@ -56,6 +56,7 @@ func LengthString(orders []UnifiedOrder) string {
 // ConvertUnifiedOrderToPageOrder converts a single UnifiedOrder to PageOrder
 func ConvertUnifiedOrderToPageOrder(order UnifiedOrder) dto.PageOrder {
 	return dto.PageOrder{
+		ID:          order.ID,
 		OrderNumber: order.OrderNumber,
 		Customer:    order.Customer,
 		OrderDate:   order.OrderDate,
@@ -70,11 +71,11 @@ func ConvertUnifiedOrderToPageOrder(order UnifiedOrder) dto.PageOrder {
 // ConvertPaginatedOrdersToPagePaginatedOrders converts PaginatedOrders to PagePaginatedOrders
 func ConvertPaginatedOrdersToPagePaginatedOrders(paginatedOrders PaginatedOrders) dto.PagePaginatedOrders {
 	pageOrders := make([]dto.PageOrder, len(paginatedOrders.Orders))
-	
+
 	for i, order := range paginatedOrders.Orders {
 		pageOrders[i] = ConvertUnifiedOrderToPageOrder(order)
 	}
-	
+
 	return dto.PagePaginatedOrders{
 		Orders:      pageOrders,
 		CurrentPage: paginatedOrders.CurrentPage,
@@ -85,3 +86,4 @@ func ConvertPaginatedOrdersToPagePaginatedOrders(paginatedOrders PaginatedOrders
 		HasNext:     paginatedOrders.HasNext,
 	}
 }
+

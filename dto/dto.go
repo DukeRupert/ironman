@@ -1,4 +1,4 @@
-// Data transfer objects (dto)
+// Data dto contains data transfer objects
 package dto
 
 import (
@@ -8,6 +8,7 @@ import (
 )
 
 type PageOrder struct {
+	ID          string
 	OrderNumber string
 	Customer    string
 	OrderDate   string
@@ -29,7 +30,6 @@ type PagePaginatedOrders struct {
 	HasNext     bool
 }
 
-
 // PageData represents a page link or ellipsis in pagination
 type PageData struct {
 	Page       int
@@ -50,3 +50,4 @@ func FormatCurrency(amount float64, currency string) string {
 		return fmt.Sprintf("%.2f %s", amount, currency)
 	}
 }
+
