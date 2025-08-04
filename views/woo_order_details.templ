@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dukerupert/ironman/orderspace"
+	"github.com/dukerupert/ironman/woo"
 )
 
-// OrderDetailPage displays the full order details
-templ OrderDetailPage(order orderspace.Order) {
+// WooOrderDetailPage displays the full WooCommerce order details
+templ WooOrderDetailPage(order woo.Order) {
 	@Layout() {
 		@Header()
 		<main class="relative isolate pt-16">
@@ -19,18 +19,18 @@ templ OrderDetailPage(order orderspace.Order) {
 				<div class="absolute top-full left-16 -mt-16 transform-gpu opacity-30 blur-3xl xl:left-1/2 xl:-ml-80">
 					<div
 						style="clip-path: polygon(100% 38.5%, 82.6% 100%, 60.2% 37.7%, 52.4% 32.1%, 47.5% 41.8%, 45.2% 65.6%, 27.5% 23.4%, 0.1% 35.3%, 17.9% 0%, 27.7% 23.4%, 76.2% 2.5%, 74.2% 56%, 100% 38.5%)"
-						class="aspect-[1154/678] w-[72.125rem] bg-gradient-to-br from-green-200 to-blue-300"
+						class="aspect-[1154/678] w-[72.125rem] bg-gradient-to-br from-blue-200 to-purple-300"
 					></div>
 				</div>
 				<div class="absolute inset-x-0 bottom-0 h-px bg-gray-900/5"></div>
 			</div>
-			@OrderDetailView(order)
+			@WooOrderDetailView(order)
 		</main>
 	}
 }
 
-// OrderDetailView is the main order detail component that can be swapped via HTMX
-templ OrderDetailView(order orderspace.Order) {
+// WooOrderDetailView is the main WooCommerce order detail component that can be swapped via HTMX
+templ WooOrderDetailView(order woo.Order) {
 	<div id="order-detail-container">
 		<!-- Header Section -->
 		<div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -38,15 +38,15 @@ templ OrderDetailView(order orderspace.Order) {
 				<div class="flex items-center gap-x-6">
 					<!-- Company/Origin Badge -->
 					<div
-						class="size-16 flex-none rounded-full bg-green-100 flex items-center justify-center ring-1 ring-gray-900/10"
+						class="size-16 flex-none rounded-full bg-blue-100 flex items-center justify-center ring-1 ring-gray-900/10"
 					>
-						<img src="/static/orderspace_logo.png" alt="orderspace logo"/>
+						<img src="/static/Woo_logo_color.png" alt="WooCommerce logo"/>
 					</div>
 					<h1>
 						<div class="text-sm/6 text-gray-500">
-							Order <span class="text-gray-700">#{ strconv.Itoa(order.Number) }</span>
+							Order <span class="text-gray-700">#{ strconv.Itoa(order.ID) }</span>
 						</div>
-						<div class="mt-1 text-base font-semibold text-gray-900">{ order.CompanyName }</div>
+						<div class="mt-1 text-base font-semibold text-gray-900">{ getCustomerName(order) }</div>
 					</h1>
 				</div>
 				<div class="flex items-center gap-x-4 sm:gap-x-6">
@@ -56,7 +56,7 @@ templ OrderDetailView(order orderspace.Order) {
 					>
 						← Back to Orders
 					</button>
-					@OrderStatusBadge(order.Status)
+					@WooOrderStatusBadge(order.Status)
 				</div>
 			</div>
 		</div>
@@ -73,12 +73,12 @@ templ OrderDetailView(order orderspace.Order) {
 							<div class="flex-auto pt-6 pl-6">
 								<dt class="text-sm/6 font-semibold text-gray-900">Total Amount</dt>
 								<dd class="mt-1 text-base font-semibold text-gray-900">
-									{ formatCurrency(order.GrossTotal, order.Currency) }
+									{ formatWooCurrency(order.Total, order.Currency) }
 								</dd>
 							</div>
 							<div class="flex-none self-end px-6 pt-4">
 								<dt class="sr-only">Status</dt>
-								@OrderStatusBadge(order.Status)
+								@WooOrderStatusBadge(order.Status)
 							</div>
 							<!-- Customer Info -->
 							<div class="mt-6 flex w-full flex-none gap-x-4 border-t border-gray-900/5 px-6 pt-6">
@@ -96,7 +96,7 @@ templ OrderDetailView(order orderspace.Order) {
 										></path>
 									</svg>
 								</dt>
-								<dd class="text-sm/6 font-medium text-gray-900">{ order.CompanyName }</dd>
+								<dd class="text-sm/6 font-medium text-gray-900">{ getCustomerName(order) }</dd>
 							</div>
 							<!-- Order Date -->
 							<div class="mt-4 flex w-full flex-none gap-x-4 px-6">
@@ -120,14 +120,36 @@ templ OrderDetailView(order orderspace.Order) {
 									</svg>
 								</dt>
 								<dd class="text-sm/6 text-gray-500">
-									<time>{ formatOrderDate(order.Created) }</time>
+									<time>{ formatWooOrderDate(order.DateCreated) }</time>
 								</dd>
 							</div>
-							<!-- Delivery Date -->
-							if order.DeliveryDate != "" {
+							<!-- Payment Method -->
+							if order.PaymentMethodTitle != "" {
 								<div class="mt-4 flex w-full flex-none gap-x-4 px-6">
 									<dt class="flex-none">
-										<span class="sr-only">Delivery date</span>
+										<span class="sr-only">Payment</span>
+										<svg
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											data-slot="icon"
+											aria-hidden="true"
+											class="h-6 w-5 text-gray-400"
+										>
+											<path
+												d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z"
+												clip-rule="evenodd"
+												fill-rule="evenodd"
+											></path>
+										</svg>
+									</dt>
+									<dd class="text-sm/6 text-gray-500">{ order.PaymentMethodTitle }</dd>
+								</div>
+							}
+							<!-- Shipping Method -->
+							if len(order.ShippingLines) > 0 && order.ShippingLines[0].MethodTitle != "" {
+								<div class="mt-4 mb-6 flex w-full flex-none gap-x-4 px-6">
+									<dt class="flex-none">
+										<span class="sr-only">Shipping</span>
 										<svg
 											viewBox="0 0 20 20"
 											fill="currentColor"
@@ -140,29 +162,9 @@ templ OrderDetailView(order orderspace.Order) {
 											></path>
 										</svg>
 									</dt>
-									<dd class="text-sm/6 text-gray-500">
-										<time>Deliver: { formatDeliveryDate(order.DeliveryDate) }</time>
-									</dd>
+									<dd class="text-sm/6 text-gray-500">{ order.ShippingLines[0].MethodTitle }</dd>
 								</div>
 							}
-							<!-- Shipping Method -->
-							<div class="mt-4 mb-6 flex w-full flex-none gap-x-4 px-6">
-								<dt class="flex-none">
-									<span class="sr-only">Shipping</span>
-									<svg
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										data-slot="icon"
-										aria-hidden="true"
-										class="h-6 w-5 text-gray-400"
-									>
-										<path
-											d="M6.5 3c-1.051 0-2.093.04-3.125.117A1.49 1.49 0 0 0 2 4.607V10.5h9V4.606c0-.681.57-1.229 1.25-1.111A41.65 41.65 0 0 1 15 3.5c.66 0 1.3.02 1.93.057A1.49 1.49 0 0 1 18 4.607v11.25c0 .69-.56 1.25-1.25 1.25H16A2 2 0 0 1 14 15v-3H6v3a2 2 0 0 1-2 2h-.75C2.56 17 2 16.44 2 15.75V4.607c0-.681.57-1.229 1.25-1.111C4.295 3.42 5.382 3.5 6.5 3.5c.66 0 1.3.02 1.93.057A1.49 1.49 0 0 1 9.5 4.607V10.5h2V4.606c0-.681.57-1.229 1.25-1.111.955-.076 1.958-.115 3-.115Z"
-										></path>
-									</svg>
-								</dt>
-								<dd class="text-sm/6 text-gray-500">{ order.ShippingType }</dd>
-							</div>
 						</dl>
 					</div>
 				</div>
@@ -178,14 +180,14 @@ templ OrderDetailView(order orderspace.Order) {
 							<div>
 								<dt class="inline text-gray-500">Created on</dt>
 								<dd class="text-gray-700">
-									<time>{ formatOrderDate(order.Created) }</time>
+									<time>{ formatWooOrderDate(order.DateCreated) }</time>
 								</dd>
 							</div>
-							if order.DeliveryDate != "" {
+							if order.DateCompleted != nil && *order.DateCompleted != "" {
 								<div>
-									<dt class="inline text-gray-500">Delivery date</dt>
+									<dt class="inline text-gray-500">Completed on</dt>
 									<dd class="inline text-gray-700">
-										<time>{ formatDeliveryDate(order.DeliveryDate) }</time>
+										<time>{ formatWooOrderDate(*order.DateCompleted) }</time>
 									</dd>
 								</div>
 							}
@@ -198,38 +200,34 @@ templ OrderDetailView(order orderspace.Order) {
 							<div class="mb-8">
 								<dt class="font-semibold text-gray-900">Customer</dt>
 								<dd class="mt-2 text-gray-500">
-									<span class="font-medium text-gray-900">{ order.CompanyName }</span>
-									if order.Phone != "" {
+									<span class="font-medium text-gray-900">{ getCustomerName(order) }</span>
+									if order.Billing.Email != "" {
 										<br/>
-										{ order.Phone }
+										{ order.Billing.Email }
 									}
-									if order.EmailAddresses.Orders != "" {
+									if order.Billing.Phone != "" {
 										<br/>
-										{ order.EmailAddresses.Orders }
+										{ order.Billing.Phone }
 									}
-									if order.Reference != "" {
+									if order.CustomerID > 0 {
 										<br/>
-										Ref: { order.Reference }
-									}
-									if order.CustomerPONumber != "" {
-										<br/>
-										PO: { order.CustomerPONumber }
+										Customer ID: { strconv.Itoa(order.CustomerID) }
 									}
 								</dd>
 							</div>
 							<!-- Shipping Address -->
-							if !isAddressEmpty(order.ShippingAddress) {
+							if !isWooAddressEmpty(order.Shipping) {
 								<div>
 									<dt class="font-semibold text-gray-900">Ship to</dt>
 									<dd class="mt-2 text-gray-500">
-										@AddressDisplay(order.ShippingAddress)
+										@WooAddressDisplay(order.Shipping)
 									</dd>
 								</div>
 							}
 						</div>
 					</dl>
 					<!-- Order Items Table -->
-					if len(order.OrderLines) > 0 {
+					if len(order.LineItems) > 0 {
 						<table class="mt-16 w-full text-left text-sm/6 whitespace-nowrap">
 							<colgroup>
 								<col class="w-full"/>
@@ -246,27 +244,22 @@ templ OrderDetailView(order orderspace.Order) {
 								</tr>
 							</thead>
 							<tbody>
-								for _, line := range order.OrderLines {
+								for _, line := range order.LineItems {
 									<tr class="border-b border-gray-100">
 										<td class="max-w-0 px-0 py-5 align-top">
 											<div class="truncate font-medium text-gray-900">{ line.Name }</div>
 											if line.SKU != "" {
 												<div class="truncate text-gray-500">SKU: { line.SKU }</div>
 											}
-											if line.Options != "" {
-												<div class="truncate text-gray-500">{ line.Options }</div>
-											}
 											<!-- Mobile quantity and price -->
 											<div class="sm:hidden mt-1 text-gray-500">
-												{ strconv.Itoa(line.Quantity) } × { formatCurrency(line.UnitPrice, order.Currency) }
+												{ strconv.Itoa(line.Quantity) } × { formatWooLinePrice(line, order.Currency) }
 											</div>
-											<!-- Status indicators -->
-											if line.OnHold {
-												<span
-													class="inline-flex items-center mt-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
-												>
-													On Hold
-												</span>
+											<!-- Meta data display -->
+											for _, meta := range line.MetaData {
+												if meta.Key != "" && !strings.HasPrefix(meta.Key, "_") && meta.Value != nil {
+													<div class="truncate text-gray-500 text-xs">{ meta.Key }: { fmt.Sprintf("%v", meta.Value) }</div>
+												}
 											}
 										</td>
 										<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">
@@ -275,16 +268,57 @@ templ OrderDetailView(order orderspace.Order) {
 										</td>
 										<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">
 											{ 
-                formatCurrency(line.UnitPrice, order.Currency) }
+                formatWooLinePrice(line, order.Currency) }
 										</td>
 										<td class="py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums">
-											{ 
-                formatCurrency(line.SubTotal+line.TaxAmount, order.Currency) }
+											{ formatWooCurrency(line.Total,
+                order.Currency) }
 										</td>
 									</tr>
 								}
+								<!-- Shipping Lines -->
+								for _, shipping := range order.ShippingLines {
+									if shipping.Total != "0" && shipping.Total != "" {
+										<tr class="border-b border-gray-100">
+											<td class="max-w-0 px-0 py-5 align-top">
+												<div class="truncate font-medium text-gray-900">{ shipping.MethodTitle }</div>
+												<div class="truncate text-gray-500">Shipping</div>
+											</td>
+											<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">1</td>
+											<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">
+												{ 
+                formatWooCurrency(shipping.Total, order.Currency) }
+											</td>
+											<td class="py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums">
+												{ 
+                formatWooCurrency(shipping.Total, order.Currency) }
+											</td>
+										</tr>
+									}
+								}
+								<!-- Fee Lines -->
+								for _, fee := range order.FeeLines {
+									if fee.Total != "0" && fee.Total != "" {
+										<tr class="border-b border-gray-100">
+											<td class="max-w-0 px-0 py-5 align-top">
+												<div class="truncate font-medium text-gray-900">{ fee.Name }</div>
+												<div class="truncate text-gray-500">Fee</div>
+											</td>
+											<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">1</td>
+											<td class="hidden py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums sm:table-cell">
+												{ 
+                formatWooCurrency(fee.Total, order.Currency) }
+											</td>
+											<td class="py-5 pr-0 pl-8 text-right align-top text-gray-700 tabular-nums">
+												{ formatWooCurrency(fee.Total,
+                order.Currency) }
+											</td>
+										</tr>
+									}
+								}
 							</tbody>
 							<tfoot>
+								<!-- Subtotal -->
 								<tr>
 									<th scope="row" class="px-0 pt-6 pb-0 font-normal text-gray-700 sm:hidden">Subtotal</th>
 									<th
@@ -292,23 +326,48 @@ templ OrderDetailView(order orderspace.Order) {
 										colspan="3"
 										class="hidden px-0 pt-6 pb-0 text-right font-normal text-gray-700 sm:table-cell"
 									>Subtotal</th>
-									<td class="pt-6 pr-0 pb-0 pl-8 text-right text-gray-900 tabular-nums">
-										{ formatCurrency(order.NetTotal,
-                order.Currency) }
-									</td>
+									<td class="pt-6 pr-0 pb-0 pl-8 text-right text-gray-900 tabular-nums">{ formatWooSubtotal(order) }</td>
 								</tr>
-								if order.GrossTotal != order.NetTotal {
+								<!-- Discounts -->
+								if order.DiscountTotal != "0" && order.DiscountTotal != "" {
+									<tr>
+										<th scope="row" class="pt-4 font-normal text-gray-700 sm:hidden">Discount</th>
+										<th scope="row" colspan="3" class="hidden pt-4 text-right font-normal text-gray-700 sm:table-cell">
+											Discount
+										</th>
+										<td class="pt-4 pr-0 pb-0 pl-8 text-right text-gray-900 tabular-nums">
+											-{ 
+                formatWooCurrency(order.DiscountTotal, order.Currency) }
+										</td>
+									</tr>
+								}
+								<!-- Shipping -->
+								if order.ShippingTotal != "0" && order.ShippingTotal != "" {
+									<tr>
+										<th scope="row" class="pt-4 font-normal text-gray-700 sm:hidden">Shipping</th>
+										<th scope="row" colspan="3" class="hidden pt-4 text-right font-normal text-gray-700 sm:table-cell">
+											Shipping
+										</th>
+										<td class="pt-4 pr-0 pb-0 pl-8 text-right text-gray-900 tabular-nums">
+											{ 
+                formatWooCurrency(order.ShippingTotal, order.Currency) }
+										</td>
+									</tr>
+								}
+								<!-- Tax -->
+								if order.TotalTax != "0" && order.TotalTax != "" {
 									<tr>
 										<th scope="row" class="pt-4 font-normal text-gray-700 sm:hidden">Tax</th>
 										<th scope="row" colspan="3" class="hidden pt-4 text-right font-normal text-gray-700 sm:table-cell">
 											Tax
 										</th>
 										<td class="pt-4 pr-0 pb-0 pl-8 text-right text-gray-900 tabular-nums">
-											{ formatCurrency(order.GrossTotal -
-                order.NetTotal, order.Currency) }
+											{ formatWooCurrency(order.TotalTax,
+                order.Currency) }
 										</td>
 									</tr>
 								}
+								<!-- Total -->
 								<tr>
 									<th scope="row" class="pt-4 font-semibold text-gray-900 sm:hidden">Total</th>
 									<th scope="row" colspan="3" class="hidden pt-4 text-right font-semibold text-gray-900 sm:table-cell">
@@ -316,7 +375,7 @@ templ OrderDetailView(order orderspace.Order) {
 									</th>
 									<td class="pt-4 pr-0 pb-0 pl-8 text-right font-semibold text-gray-900 tabular-nums">
 										{ 
-                formatCurrency(order.GrossTotal, order.Currency) }
+                formatWooCurrency(order.Total, order.Currency) }
 									</td>
 								</tr>
 							</tfoot>
@@ -324,7 +383,7 @@ templ OrderDetailView(order orderspace.Order) {
 					}
 				</div>
 				<!-- Notes and Additional Info -->
-				if order.CustomerNote != "" || order.InternalNote != "" {
+				if order.CustomerNote != "" || hasWooOrderNotes(order) {
 					<div class="lg:col-start-3">
 						<h2 class="text-sm/6 font-semibold text-gray-900">Notes</h2>
 						<div class="mt-6 space-y-6">
@@ -341,16 +400,17 @@ templ OrderDetailView(order orderspace.Order) {
 									</div>
 								</div>
 							}
-							if order.InternalNote != "" {
+							<!-- Transaction ID -->
+							if order.TransactionID != "" {
 								<div class="relative flex gap-x-4">
 									<div class="relative flex size-6 flex-none items-center justify-center bg-white">
 										<div class="size-1.5 rounded-full bg-blue-100 ring-1 ring-blue-300"></div>
 									</div>
 									<div class="flex-auto rounded-md p-3 ring-1 ring-gray-200 ring-inset">
 										<div class="flex justify-between gap-x-4">
-											<div class="py-0.5 text-xs/5 font-medium text-gray-900">Internal Note</div>
+											<div class="py-0.5 text-xs/5 font-medium text-gray-900">Transaction ID</div>
 										</div>
-										<p class="text-sm/6 text-gray-500">{ order.InternalNote }</p>
+										<p class="text-sm/6 text-gray-500 font-mono">{ order.TransactionID }</p>
 									</div>
 								</div>
 							}
@@ -362,26 +422,24 @@ templ OrderDetailView(order orderspace.Order) {
 	</div>
 }
 
-// AddressDisplay component for rendering addresses
-templ AddressDisplay(address orderspace.OrderAddress) {
-	<span class="font-medium text-gray-900">
-		if address.CompanyName != "" {
-			{ address.CompanyName }
-		}
-	</span>
-	if address.ContactName != "" && address.CompanyName != address.ContactName {
+// WooAddressDisplay component for rendering WooCommerce addresses
+templ WooAddressDisplay(address woo.OrderAddress) {
+	if address.Company != "" {
+		<span class="font-medium text-gray-900">{ address.Company }</span>
 		<br/>
-		{ address.ContactName }
 	}
-	if address.Line1 != "" {
+	if address.FirstName != "" || address.LastName != "" {
+		{ strings.TrimSpace(address.FirstName + " " + address.LastName) }
 		<br/>
-		{ address.Line1 }
 	}
-	if address.Line2 != "" {
+	if address.Address1 != "" {
+		{ address.Address1 }
 		<br/>
-		{ address.Line2 }
 	}
-	<br/>
+	if address.Address2 != "" {
+		{ address.Address2 }
+		<br/>
+	}
 	if address.City != "" {
 		{ address.City }
 	}
@@ -390,8 +448,8 @@ templ AddressDisplay(address orderspace.OrderAddress) {
 	} else if address.State != "" {
 		{ address.State }
 	}
-	if address.PostalCode != "" {
-		{ address.PostalCode }
+	if address.Postcode != "" {
+		{ address.Postcode }
 	}
 	if address.Country != "" {
 		<br/>
@@ -399,34 +457,44 @@ templ AddressDisplay(address orderspace.OrderAddress) {
 	}
 }
 
-// OrderStatusBadge component for order status
-templ OrderStatusBadge(status string) {
-	<dd class={ "rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset " + getStatusBadgeClass(status) }>
-		{ strings.Title(strings.ToLower(status)) }
+// WooOrderStatusBadge component for WooCommerce order status
+templ WooOrderStatusBadge(status string) {
+	<dd class={ "rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset " + getWooStatusBadgeClass(status) }>
+		{ strings.Title(strings.ReplaceAll(status, "-", " ")) }
 	</dd>
 }
 
-// Helper functions (these would typically go in a separate helpers file)
-func formatCurrency(amount float64, currency string) string {
+// Helper functions for WooCommerce orders
+func formatWooCurrency(amount string, currency string) string {
+	// Parse the string amount to float
+	if amount == "" {
+		amount = "0"
+	}
+
+	amountFloat := 0.0
+	if parsed, err := strconv.ParseFloat(amount, 64); err == nil {
+		amountFloat = parsed
+	}
+
 	switch strings.ToUpper(currency) {
 	case "USD":
-		return fmt.Sprintf("$%.2f", amount)
+		return fmt.Sprintf("$%.2f", amountFloat)
 	case "GBP":
-		return fmt.Sprintf("£%.2f", amount)
+		return fmt.Sprintf("£%.2f", amountFloat)
 	case "EUR":
-		return fmt.Sprintf("€%.2f", amount)
+		return fmt.Sprintf("€%.2f", amountFloat)
 	default:
-		return fmt.Sprintf("%.2f %s", amount, currency)
+		return fmt.Sprintf("%.2f %s", amountFloat, currency)
 	}
 }
 
-func formatOrderDate(dateStr string) string {
+func formatWooOrderDate(dateStr string) string {
 	if dateStr == "" {
 		return ""
 	}
 
-	// Parse the ISO 8601 date
-	t, err := time.Parse("2006-01-02T15:04:05Z", dateStr)
+	// Parse the WooCommerce date format (2023-01-23T10:32:00)
+	t, err := time.Parse("2006-01-02T15:04:05", dateStr)
 	if err != nil {
 		return dateStr // Return original if parsing fails
 	}
@@ -434,43 +502,74 @@ func formatOrderDate(dateStr string) string {
 	return t.Format("January 2, 2006")
 }
 
-func formatDeliveryDate(dateStr string) string {
-	if dateStr == "" {
-		return ""
+func formatWooLinePrice(line woo.OrderLineItem, currency string) string {
+	// Calculate unit price from subtotal and quantity
+	if line.Quantity == 0 {
+		return formatWooCurrency("0", currency)
 	}
 
-	// Parse the date (assuming YYYY-MM-DD format)
-	t, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return dateStr // Return original if parsing fails
+	subtotal := 0.0
+	if parsed, err := strconv.ParseFloat(line.Subtotal, 64); err == nil {
+		subtotal = parsed
 	}
 
-	return t.Format("January 2, 2006")
+	unitPrice := subtotal / float64(line.Quantity)
+	return formatWooCurrency(fmt.Sprintf("%.2f", unitPrice), currency)
 }
 
-func isAddressEmpty(address orderspace.OrderAddress) bool {
-	return address.CompanyName == "" &&
-		address.ContactName == "" &&
-		address.Line1 == "" &&
+func formatWooSubtotal(order woo.Order) string {
+	// Calculate subtotal from line items
+	subtotal := 0.0
+	for _, line := range order.LineItems {
+		if parsed, err := strconv.ParseFloat(line.Subtotal, 64); err == nil {
+			subtotal += parsed
+		}
+	}
+	return formatWooCurrency(fmt.Sprintf("%.2f", subtotal), order.Currency)
+}
+
+func getCustomerName(order woo.Order) string {
+	name := strings.TrimSpace(order.Billing.FirstName + " " + order.Billing.LastName)
+	if name == "" && order.Billing.Company != "" {
+		return order.Billing.Company
+	}
+	if name == "" && order.Billing.Email != "" {
+		return order.Billing.Email
+	}
+	if name == "" {
+		return "Guest Customer"
+	}
+	return name
+}
+
+func isWooAddressEmpty(address woo.OrderAddress) bool {
+	return address.FirstName == "" &&
+		address.LastName == "" &&
+		address.Company == "" &&
+		address.Address1 == "" &&
 		address.City == ""
 }
 
-func getStatusBadgeClass(status string) string {
+func hasWooOrderNotes(order woo.Order) bool {
+	return order.TransactionID != ""
+}
+
+func getWooStatusBadgeClass(status string) string {
 	switch strings.ToLower(status) {
-	case "new":
-		return "bg-purple-50 text-purple-600 ring-purple-600/20"
-	case "confirmed":
-		return "bg-blue-50 text-blue-600 ring-blue-600/20"
-	case "processing":
+	case "pending":
 		return "bg-yellow-50 text-yellow-600 ring-yellow-600/20"
-	case "dispatched":
-		return "bg-green-50 text-green-600 ring-green-600/20"
-	case "delivered":
+	case "processing":
+		return "bg-blue-50 text-blue-600 ring-blue-600/20"
+	case "on-hold":
+		return "bg-gray-50 text-gray-600 ring-gray-600/20"
+	case "completed":
 		return "bg-green-50 text-green-600 ring-green-600/20"
 	case "cancelled":
 		return "bg-red-50 text-red-600 ring-red-600/20"
-	case "on hold":
-		return "bg-gray-50 text-gray-600 ring-gray-600/20"
+	case "refunded":
+		return "bg-purple-50 text-purple-600 ring-purple-600/20"
+	case "failed":
+		return "bg-red-50 text-red-600 ring-red-600/20"
 	default:
 		return "bg-gray-50 text-gray-600 ring-gray-600/20"
 	}

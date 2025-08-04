@@ -141,12 +141,13 @@ func (s *Service) HandleOrder(c echo.Context) error {
 			slog.Error("Malformed order id cannot be converted to an integer: %s", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		_, err = s.wooClient.GetOrder(orderID)
+		order, err := s.wooClient.GetOrder(orderID)
 		if err != nil {
 			slog.Error("Failed to fetch woocommerce order details: %s", err)
 			return c.NoContent(http.StatusBadRequest)
 		}
-		return c.String(http.StatusOK, "woocommerce order details")
+		page := views.WooOrderDetailPage(*order)
+		return page.Render(c.Request().Context(), c.Response())
 	}
 
 	// Convert for template
