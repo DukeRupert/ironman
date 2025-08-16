@@ -1,0 +1,266 @@
+{{/* OrdersPage template */}}
+{{define "orders_page"}}
+{{template "layout" .}}
+{{end}}
+
+{{/* Main content for the orders page */}}
+{{define "content"}}
+{{template "header" .}}
+<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    {{template "order_stats" .Pagination.Orders}}
+    {{template "orders_table_with_pagination" .Pagination}}
+</main>
+{{end}}
+
+{{/* Status badge component */}}
+{{define "status_badge"}}
+<span class="status-badge status-{{.Status | statusClass}}">
+    {{.Status}}
+</span>
+{{end}}
+
+{{/* Orders table component with pagination info */}}
+{{define "orders_table_with_pagination"}}
+<div id="orders-container" class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-base font-semibold text-gray-900">Recent Orders</h1>
+            <p class="mt-2 text-sm text-gray-700">
+                Showing {{len .Orders}} of {{.TotalOrders}} orders from all connected platforms.
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <button type="button" onclick="refreshOrders()" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                <span id="refresh-text">Refresh Orders</span>
+            </button>
+        </div>
+    </div>
+    
+    {{if eq (len .Orders) 0}}
+        <div class="mt-8 text-center py-12">
+            <p class="text-gray-500">No orders found</p>
+        </div>
+    {{else}}
+        <div class="-mx-4 mt-8 sm:-mx-0">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead>
+                    <tr>
+                        <th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 sm:pl-0">Order #</th>
+                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 lg:table-cell">Customer</th>
+                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 sm:table-cell">Order Date</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Origin</th>
+                        <th scope="col" class="py-3.5 pr-4 pl-3 sm:pr-0">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {{range .Orders}}
+                    <tr>
+                        <td class="w-full max-w-0 py-4 pr-3 pl-4 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-0">
+                            {{.OrderNumber}}
+                            <dl class="font-normal lg:hidden">
+                                <dt class="sr-only">Customer</dt>
+                                <dd class="mt-1 truncate text-gray-700">{{.Customer}}</dd>
+                                <dt class="sr-only sm:hidden">Order Date</dt>
+                                <dd class="mt-1 truncate text-gray-500 sm:hidden">{{.OrderDate}}</dd>
+                                <dt class="sr-only sm:hidden">Deliver On</dt>
+                                {{if ne .DeliverOn "N/A"}}
+                                    <dd class="mt-1 truncate text-gray-500 sm:hidden">Deliver: {{.DeliverOn}}</dd>
+                                {{end}}
+                            </dl>
+                        </td>
+                        <td class="hidden px-3 py-4 text-sm text-gray-500 lg:table-cell">{{.Customer}}</td>
+                        <td class="hidden px-3 py-4 text-sm text-gray-500 sm:table-cell">
+                            <div>{{.OrderDate}}</div>
+                            {{if ne .DeliverOn "N/A"}}
+                                <div class="text-xs text-gray-400 mt-1">Deliver: {{.DeliverOn}}</div>
+                            {{end}}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900 font-medium">{{.Total}}</td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            {{template "status_badge" .}}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            <!-- Mobile: Circle badge only -->
+                            <div class="sm:hidden">
+                                <div class="{{.Origin | originCircleClass}} w-4 h-4 rounded-full" title="{{.Origin}}"></div>
+                            </div>
+                            <!-- Desktop: Full text badge -->
+                            <div class="hidden sm:block">
+                                <span class="{{.Origin | originBadgeClass}}">
+                                    {{.Origin}}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="py-4 pr-4 pl-3 text-right text-sm font-medium sm:pr-0">
+                            <a href="/orders/{{.OrderNumber}}" class="text-indigo-600 hover:text-indigo-900">
+                                View<span class="sr-only">, {{.OrderNumber}}</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{template "pagination" .}}
+    {{end}}
+</div>
+{{end}}
+
+{{/* Pagination component with HTMX */}}
+{{define "pagination"}}
+{{if gt .TotalPages 1}}
+    <nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-6">
+        <div class="-mt-px flex w-0 flex-1">
+            {{if .HasPrev}}
+                <a 
+                    href="?page={{sub .CurrentPage 1}}"
+                    hx-get="/orders?page={{sub .CurrentPage 1}}"
+                    hx-target="#orders-container"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                    class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="mr-3 size-5 text-gray-400">
+                        <path d="M18 10a.75.75 0 0 1-.75.75H4.66l2.1 1.95a.75.75 0 1 1-1.02 1.1l-3.5-3.25a.75.75 0 0 1 0-1.1l3.5-3.25a.75.75 0 1 1 1.02 1.1l-2.1 1.95h12.59A.75.75 0 0 1 18 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                    <span class="htmx-indicator">
+                        <div class="spinner mr-2"></div>
+                    </span>
+                    Previous
+                </a>
+            {{else}}
+                <span class="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="mr-3 size-5 text-gray-300">
+                        <path d="M18 10a.75.75 0 0 1-.75.75H4.66l2.1 1.95a.75.75 0 1 1-1.02 1.1l-3.5-3.25a.75.75 0 0 1 0-1.1l3.5-3.25a.75.75 0 1 1 1.02 1.1l-2.1 1.95h12.59A.75.75 0 0 1 18 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                    Previous
+                </span>
+            {{end}}
+        </div>
+        
+        <!-- Page numbers (hidden on mobile) -->
+        <div class="hidden md:-mt-px md:flex">
+            {{range pageNumbers .CurrentPage .TotalPages}}
+                {{if .IsCurrent}}
+                    <a 
+                        href="?page={{.Page}}" 
+                        aria-current="page" 
+                        class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600">
+                        {{.Page}}
+                    </a>
+                {{else if .IsEllipsis}}
+                    <span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">...</span>
+                {{else}}
+                    <a 
+                        href="?page={{.Page}}"
+                        hx-get="/orders?page={{.Page}}"
+                        hx-target="#orders-container"
+                        hx-swap="outerHTML"
+                        hx-push-url="true"
+                        class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                        <span class="htmx-indicator">
+                            <div class="spinner mr-1"></div>
+                        </span>
+                        {{.Page}}
+                    </a>
+                {{end}}
+            {{end}}
+        </div>
+        
+        <div class="-mt-px flex w-0 flex-1 justify-end">
+            {{if .HasNext}}
+                <a 
+                    href="?page={{add .CurrentPage 1}}"
+                    hx-get="/orders?page={{add .CurrentPage 1}}"
+                    hx-target="#orders-container"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                    class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                    <span class="htmx-indicator">
+                        <div class="spinner mr-2"></div>
+                    </span>
+                    Next
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-3 size-5 text-gray-400">
+                        <path d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                </a>
+            {{else}}
+                <span class="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    Next
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="ml-3 size-5 text-gray-300">
+                        <path d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                </span>
+            {{end}}
+        </div>
+    </nav>
+    
+    <!-- Mobile pagination info -->
+    <div class="mt-4 text-center md:hidden">
+        <p class="text-sm text-gray-700">
+            Page {{.CurrentPage}} of {{.TotalPages}} 
+            ({{.TotalOrders}} total orders)
+        </p>
+    </div>
+{{end}}
+{{end}}
+
+{{/* Stats component */}}
+{{define "order_stats"}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-sm font-bold">{{countByOrigin . "WooCommerce"}}</span>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">WooCommerce Orders</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{countByOrigin . "WooCommerce"}}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-sm font-bold">{{countByOrigin . "Orderspace"}}</span>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Orderspace Orders</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{countByOrigin . "Orderspace"}}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-sm font-bold">{{len .}}</span>
+                    </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{len .}}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

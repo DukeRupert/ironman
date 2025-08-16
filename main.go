@@ -1,7 +1,8 @@
 package main
 
 import (
-	"context"
+	"html/template"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -28,6 +29,16 @@ func FormatCurrency(amount float64, currency string) string {
 	}
 }
 
+// TemplateRenderer is a custom html/template renderer for Echo
+type TemplateRenderer struct {
+	templates *template.Template
+}
+
+// Render renders a template document
+func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
 // Example usage function
 func main() {
 	// Set up structured logging
@@ -44,6 +55,17 @@ func main() {
 	// Initialize Echo
 	e := echo.New()
 
+	// Parse all template files with custom functions
+	tmpl := template.Must(
+		template.New("").
+			Funcs(views.TemplateFuncs()).
+			ParseGlob("views/*.html"),
+	)
+
+	e.Renderer = &TemplateRenderer{
+		templates: tmpl,
+	}
+
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -53,8 +75,7 @@ func main() {
 	e.Static("/static", "static")
 
 	e.GET("/", func(c echo.Context) error {
-		page := views.HomePage()
-		return page.Render(context.Background(), c.Response())
+		return c.Render(http.StatusOK, "home_page", nil)
 	})
 
 	e.GET("/orders", orderService.HandleOrders)
