@@ -1,8 +1,8 @@
 package orders
 
 import (
-	"fmt"
-	"log/slog"
+	"html/template"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,9 +11,32 @@ import (
 	"github.com/labstack/echo"
 )
 
-// Handler for the orders page
-// In your orders package
-func (s *Service) HandleOrders(c echo.Context) error {
+// TemplateRenderer is a custom html/template renderer for Echo
+type TemplateRenderer struct {
+	templates *template.Template
+}
+
+// Render renders a template document
+func (t *TemplateRenderer) Render(w io.Writer, name string, data any, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+// NewTemplateRenderer creates a new template renderer
+func NewTemplateRenderer() *TemplateRenderer {
+	// Parse all template files
+	tmpl := template.Must(
+		template.New("").
+			Funcs(views.TemplateFuncs()).
+			ParseGlob("views/*.html"),
+	)
+
+	return &TemplateRenderer{
+		templates: tmpl,
+	}
+}
+
+// HandleOrdersWithHTMLTemplate handles the orders page using html/template
+func (s *Service) HandleOrdersWithHTMLTemplate(c echo.Context) error {
 	// Get page parameter
 	pageStr := c.QueryParam("page")
 	page, err := strconv.Atoi(pageStr)
@@ -21,8 +44,8 @@ func (s *Service) HandleOrders(c echo.Context) error {
 		page = 1
 	}
 
-	// Get orders (your existing logic)
-	paginatedOrders, err := s.GetUnifiedOrdersPaginated(page, 20)
+	// Get orders (this is your existing logic)
+	paginatedOrders, err := s.GetUnifiedOrdersPaginated(page, 20) // 20 orders per page
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch orders",
@@ -47,47 +70,80 @@ func (s *Service) HandleOrders(c echo.Context) error {
 	return c.Render(http.StatusOK, "orders_page", data)
 }
 
-// HandleOrder for the /order/:id route returns detail page
-func (s *Service) HandleOrder(c echo.Context) error {
-	slog.Info("Order details page requested", "path", c.Request().URL.Path)
-
-	// Get pagination parameters from query string
+// HandleOrderDetailWithHTMLTemplate handles individual order detail pages
+func (s *Service) HandleOrderDetailWithHTMLTemplate(c echo.Context) error {
+	// Get order ID from URL parameter
 	id := c.Param("id")
 	if id == "" {
-		slog.Error("Missing order id parameter")
-		return c.NoContent(http.StatusBadRequest)
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Missing order ID",
+		})
 	}
 
+	// Determine order type based on ID format
 	orderType := "woocommerce"
-	// Check if id begins with "or_" which indicates an OrderSpace order
 	if strings.Contains(id, "or_") {
 		orderType = "orderspace"
 	}
 
+	var data views.TemplateData
+	var templateName string
+
 	switch orderType {
-	case "woo":
-		orderType = "woocommerce"
-	case "ord":
-		orderType = "orderspace"
+	case "orderspace":
+		// Fetch Orderspace order
+		order, err := s.orderspaceClient.GetOrder(id)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "Failed to fetch order details",
+			})
+		}
+
+		data = views.TemplateData{
+			Order:     *order,
+			OrderType: "orderspace",
+		}
+		templateName = "orderspace_order_detail_page"
+
+	case "woocommerce":
+		// Convert string ID to int for WooCommerce
+		orderID, err := strconv.Atoi(id)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid order ID format",
+			})
+		}
+
+		// Fetch WooCommerce order
+		order, err := s.wooClient.GetOrder(orderID)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "Failed to fetch order details",
+			})
+		}
+
+		data = views.TemplateData{
+			Order:     *order,
+			OrderType: "woocommerce",
+		}
+		templateName = "woo_order_detail_page"
+
+	default:
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Unknown order type",
+		})
 	}
 
-	slog.Info("Fetching order details", "order_type", orderType, "order_id", orderID)
+	// Check if this is an HTMX request (for partial updates)
+	if c.Request().Header.Get("HX-Request") == "true" {
+		// Return just the detail view component for HTMX swapping
+		if orderType == "orderspace" {
+			return c.Render(http.StatusOK, "orderspace_order_detail_view", data.Order)
+		} else {
+			return c.Render(http.StatusOK, "woo_order_detail_view", data.Order)
+		}
+	}
 
-	// // Convert for template
-	// pagePaginatedOrders := ConvertPaginatedOrdersToPagePaginatedOrders(*paginatedOrders)
-
-	// // Check if this is an HTMX request (for pagination)
-	// if c.Request().Header.Get("HX-Request") == "true" {
-	// 	slog.Info("HTMX request detected, returning table component only")
-	// 	// Return just the table component for HTMX swapping
-	// 	ordersTable := views.OrdersTableWithPagination(pagePaginatedOrders)
-	// 	return ordersTable.Render(c.Request().Context(), c.Response())
-	// }
-
-	// // Return full page for regular requests
-	// slog.Info("Regular request, returning full page")
-	// ordersPage := views.OrdersPage(pagePaginatedOrders)
-	// return ordersPage.Render(c.Request().Context(), c.Response())
-
-	return c.String(http.StatusOK, fmt.Sprintf("Order id: %s", id))
+	// Return full page for regular requests
+	return c.Render(http.StatusOK, templateName, data)
 }

@@ -3,6 +3,7 @@ package orderspace
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -177,31 +178,44 @@ func (c *Client) ListOrders(options *OrderListOptions) (*OrdersResponse, error) 
 }
 
 // GetOrder retrieves a single order by ID
+// GetOrder retrieves a single order by ID
 func (c *Client) GetOrder(orderID string) (*Order, error) {
+	slog.Info("GetOrder called", "orderID", orderID)
+
 	endpoint := fmt.Sprintf("orders/%s", orderID)
+	slog.Debug("Making GET request", "endpoint", endpoint)
+
 	response, err := c.GET(endpoint, nil)
 	if err != nil {
+		slog.Error("GET request failed", "endpoint", endpoint, "error", err)
 		return nil, err
 	}
+	slog.Debug("GET request successful", "response_status", "ok")
 
 	if response.Data == nil {
+		slog.Error("Response data is nil", "endpoint", endpoint)
 		return nil, fmt.Errorf("no data in response")
 	}
+	slog.Debug("Response data present", "data_type", fmt.Sprintf("%T", response.Data))
 
 	jsonData, err := json.Marshal(response.Data)
 	if err != nil {
+		slog.Error("Failed to marshal response data", "error", err, "data_type", fmt.Sprintf("%T", response.Data))
 		return nil, fmt.Errorf("failed to marshal response data: %w", err)
 	}
+	slog.Debug("Successfully marshaled response data", "json_length", len(jsonData), "json_preview", string(jsonData[:min(200, len(jsonData))]))
 
 	// Orderspace API returns single orders wrapped in an "order" object
 	var wrappedResponse struct {
 		Order Order `json:"order"`
 	}
-
 	if err := json.Unmarshal(jsonData, &wrappedResponse); err != nil {
+		slog.Error("Failed to unmarshal order", "error", err, "json_data", string(jsonData))
 		return nil, fmt.Errorf("failed to unmarshal order: %w", err)
 	}
+	slog.Debug("Successfully unmarshaled order", "order_id", wrappedResponse.Order.ID)
 
+	slog.Info("GetOrder completed successfully", "orderID", orderID, "retrieved_order_id", wrappedResponse.Order.ID)
 	return &wrappedResponse.Order, nil
 }
 
@@ -261,4 +275,3 @@ func (c *Client) GetOrdersInDateRange(createdSince, createdUntil string, limit i
 func (c *Client) GetLast10Orders() (*OrdersResponse, error) {
 	return c.GetAllOrders(10, "")
 }
-

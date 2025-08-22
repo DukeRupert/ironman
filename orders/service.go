@@ -37,7 +37,7 @@ type Service struct {
 // UnifiedOrder represents an order from either system for display
 type UnifiedOrder struct {
 	ID          string
-	OrderNumber string
+	OrderNumber int
 	Customer    string
 	OrderDate   string
 	DeliverOn   string
@@ -196,7 +196,7 @@ func (s *Service) ConvertWooOrder(order woo.Order) UnifiedOrder {
 
 	return UnifiedOrder{
 		ID:          strconv.Itoa(order.ID),
-		OrderNumber: "woo_" + strconv.Itoa(order.ID),
+		OrderNumber: order.ID,
 		Customer:    customer,
 		OrderDate:   orderDate,
 		DeliverOn:   "N/A",
@@ -238,7 +238,7 @@ func (s *Service) ConvertOrderspaceOrder(order orderspace.Order) UnifiedOrder {
 
 	return UnifiedOrder{
 		ID:          order.ID,
-		OrderNumber: "ord_" + strconv.Itoa(order.Number),
+		OrderNumber: order.Number,
 		Customer:    customer,
 		OrderDate:   orderDate,
 		DeliverOn:   deliverOn,

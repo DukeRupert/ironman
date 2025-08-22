@@ -9,7 +9,7 @@ import (
 
 type PageOrder struct {
 	ID          string
-	OrderNumber string
+	OrderNumber int
 	Customer    string
 	OrderDate   string
 	DeliverOn   string
@@ -50,4 +50,3 @@ func FormatCurrency(amount float64, currency string) string {
 		return fmt.Sprintf("%.2f %s", amount, currency)
 	}
 }
-
