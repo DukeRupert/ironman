@@ -1,8 +1,6 @@
 package orders
 
 import (
-	"html/template"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,32 +9,8 @@ import (
 	"github.com/labstack/echo"
 )
 
-// TemplateRenderer is a custom html/template renderer for Echo
-type TemplateRenderer struct {
-	templates *template.Template
-}
-
-// Render renders a template document
-func (t *TemplateRenderer) Render(w io.Writer, name string, data any, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-// NewTemplateRenderer creates a new template renderer
-func NewTemplateRenderer() *TemplateRenderer {
-	// Parse all template files
-	tmpl := template.Must(
-		template.New("").
-			Funcs(views.TemplateFuncs()).
-			ParseGlob("views/*.html"),
-	)
-
-	return &TemplateRenderer{
-		templates: tmpl,
-	}
-}
-
-// HandleOrdersWithHTMLTemplate handles the orders page using html/template
-func (s *Service) HandleOrdersWithHTMLTemplate(c echo.Context) error {
+// Handler for the orders page
+func (s *Service) HandleOrders(c echo.Context) error {
 	// Get page parameter
 	pageStr := c.QueryParam("page")
 	page, err := strconv.Atoi(pageStr)
