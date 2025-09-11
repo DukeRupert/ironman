@@ -2,57 +2,88 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 )
 
 func Hello(c echo.Context) error {
 	return c.Render(http.StatusOK, "hello", "World")
 }
 
-func main() {
-	// Setup
-	e := echo.New()
-	t, err := NewTemplate()
+func upload(c echo.Context) error {
+	return c.Render(http.StatusOK, "upload", nil)
+}
+
+func handleUpload(c echo.Context) error {
+	// Read form fields
+	name := c.FormValue("name")
+	email := c.FormValue("email")
+
+	//-----------
+	// Read file
+	//-----------
+
+	// Source
+	file, err := c.FormFile("file")
 	if err != nil {
-		e.Logger.Fatal("failed to create template", err)
+		return err
 	}
-	e.Renderer = t
-	e.Logger.SetLevel(log.INFO)
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	// Destination
+	dst, err := os.Create(file.Filename)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	// Copy
+	if _, err = io.Copy(dst, src); err != nil {
+		return err
+	}
+
+	return c.HTML(http.StatusOK, fmt.Sprintf("<p>File %s uploaded successfully with fields name=%s and email=%s.</p>", file.Filename, name, email))
+}
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = ""
+	dbname   = "postgres"
+)
+
+func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus:   true,
-		LogURI:      true,
-		LogError:    true,
-		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if v.Error == nil {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-				)
-			} else {
-				logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-					slog.String("err", v.Error.Error()),
-				)
-			}
-			return nil
-		},
-	}))
-	e.GET("/", func(c echo.Context) error {
-		time.Sleep(5 * time.Second)
-		return c.JSON(http.StatusOK, "OK")
-	})
-	e.GET("/hello", Hello)
+	// establishd database connection
+	ctx := context.Background()
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", user, password, host, port, dbname)
+	db, err := pgx.Connect(ctx, connectionString)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close(ctx)
+
+	err = db.Ping(ctx)
+	if err != nil {
+		panic(err)
+	}
+	
+	logger.Info("database connection established...")
+
+	e := NewEchoServer(logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
