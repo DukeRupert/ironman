@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/dukerupert/go-claude"
 	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 )
@@ -80,8 +82,30 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	logger.Info("database connection established...")
+
+	// Create client with API key from environment
+	anthropicApiKey := os.Getenv("ANTHROPIC_API_KEY")
+	if anthropicApiKey == "" {
+		log.Fatal("Missing anthropic api key")
+	}
+	client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
+
+	// Simple message
+	resp, err := client.SimpleMessage(
+		context.Background(),
+		"claude-3-opus-20240229",
+		"Hello, Claude!",
+		4096,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Response: %s\n", resp.GetText())
+	fmt.Printf("Tokens used: %d input, %d output\n",
+		resp.Usage.InputTokens, resp.Usage.OutputTokens)
 
 	e := NewEchoServer(logger)
 

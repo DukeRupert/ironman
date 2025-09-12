@@ -1,6 +1,6 @@
 module github.com/dukerupert/ironman
 
-go 1.24.4
+go 1.24.5
 
 require (
 	github.com/labstack/echo/v4 v4.13.4
@@ -13,6 +13,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
+	github.com/dukerupert/go-claude v0.1.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
