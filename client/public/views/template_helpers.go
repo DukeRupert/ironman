@@ -3,8 +3,6 @@ package views
 import (
 	"html/template"
 	"strings"
-
-	"github.com/dukerupert/ironman/dto"
 )
 
 // PageData represents data for pagination page numbers
@@ -40,18 +38,7 @@ func TemplateFuncs() template.FuncMap {
 				return "bg-blue-400"
 			}
 			return "bg-green-400"
-		},
-
-		// Count functions
-		"countByOrigin": func(orders []dto.PageOrder, origin string) int {
-			count := 0
-			for _, order := range orders {
-				if order.Origin == origin {
-					count++
-				}
-			}
-			return count
-		},
+		},		
 
 		// Page numbers function
 		"pageNumbers": func(currentPage, totalPages int) []PageData {
@@ -102,10 +89,4 @@ func getPageNumbersData(currentPage, totalPages int) []PageData {
 	}
 
 	return pages
-}
-
-// TemplateData represents the data structure passed to templates
-type TemplateData struct {
-	Pagination dto.PagePaginatedOrders
-	// Add other fields as needed for different pages
 }

@@ -1,0 +1,235 @@
+{{/* App layout template for authenticated pages */}}
+{{define "app-layout"}}
+<!doctype html>
+<html lang="en" class="h-full bg-white dark:bg-gray-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.PageTitle}} - SafeSite Inspector</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js" integrity="sha384-Akqfrbj/HpNVo8k11SXBb6TlBWmyKJe+hDm3Z/B2WVG4smwBkRVm" crossorigin="anonymous"></script>
+</head>
+<body class="h-full">
+    <!-- Mobile sidebar dialog -->
+    <div id="mobile-sidebar" class="relative z-50 lg:hidden hidden">
+        <div class="fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ease-linear" onclick="closeMobileSidebar()"></div>
+        
+        <div class="fixed inset-0 flex">
+            <div class="relative mr-16 flex w-full max-w-xs flex-1 transform transition duration-300 ease-in-out">
+                <div class="absolute top-0 left-full flex w-16 justify-center pt-5">
+                    <button type="button" onclick="closeMobileSidebar()" class="-m-2.5 p-2.5">
+                        <span class="sr-only">Close sidebar</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 text-white">
+                            <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mobile sidebar content -->
+                <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2 dark:bg-gray-900 dark:ring dark:ring-white/10">
+                    <div class="flex h-16 shrink-0 items-center">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                            </div>
+                            <span class="text-lg font-bold text-gray-900 dark:text-white">SafeSite</span>
+                        </div>
+                    </div>
+                    {{template "sidebar-nav" .}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Static sidebar for desktop -->
+    <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col dark:bg-gray-900">
+        <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 dark:border-white/10 dark:bg-black/10">
+            <div class="flex h-16 shrink-0 items-center">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">SafeSite Inspector</span>
+                </div>
+            </div>
+            {{template "sidebar-nav" .}}
+        </div>
+    </div>
+
+    <!-- Mobile header -->
+    <div class="sticky top-0 z-40 flex items-center gap-x-6 bg-white px-4 py-4 shadow-xs sm:px-6 lg:hidden dark:bg-gray-900 dark:shadow-none dark:after:pointer-events-none dark:after:absolute dark:after:inset-0 dark:after:border-b dark:after:border-white/10 dark:after:bg-black/10">
+        <button type="button" onclick="openMobileSidebar()" class="-m-2.5 p-2.5 text-gray-700 hover:text-gray-900 lg:hidden dark:text-gray-400 dark:hover:text-white">
+            <span class="sr-only">Open sidebar</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6">
+                <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </button>
+        <div class="flex-1 text-sm/6 font-semibold text-gray-900 dark:text-white">{{.PageTitle}}</div>
+        <div class="relative">
+            <button type="button" onclick="toggleMobileProfile()" class="flex items-center">
+                <span class="sr-only">Your profile</span>
+                <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
+                    <span class="text-sm font-medium text-white">{{.User.Initials}}</span>
+                </div>
+            </button>
+            <!-- Mobile profile dropdown -->
+            <div id="mobile-profile-menu" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-white/10">
+                <a href="/app/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Profile</a>
+                <a href="/app/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Settings</a>
+                <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Sign out</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <main class="py-10 lg:pl-72">
+        <div class="px-4 sm:px-6 lg:px-8">
+            {{template "app-content" .}}
+        </div>
+    </main>
+
+    <script>
+        function openMobileSidebar() {
+            document.getElementById('mobile-sidebar').classList.remove('hidden');
+        }
+
+        function closeMobileSidebar() {
+            document.getElementById('mobile-sidebar').classList.add('hidden');
+        }
+
+        function toggleMobileProfile() {
+            const menu = document.getElementById('mobile-profile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close mobile profile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileButton = event.target.closest('[onclick="toggleMobileProfile()"]');
+            const profileMenu = document.getElementById('mobile-profile-menu');
+            
+            if (!profileButton && profileMenu && !profileMenu.contains(event.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+{{end}}
+
+{{/* Sidebar navigation component */}}
+{{define "sidebar-nav"}}
+<nav class="flex flex-1 flex-col">
+    <ul role="list" class="flex flex-1 flex-col gap-y-7">
+        <li>
+            <ul role="list" class="-mx-2 space-y-1">
+                <li>
+                    <a href="/app/dashboard" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "dashboard"}}bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white{{else}}text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white{{end}}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 shrink-0 {{if eq .CurrentPage "dashboard"}}text-indigo-600 dark:text-white{{else}}text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white{{end}}">
+                            <path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/app/projects" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "projects"}}bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white{{else}}text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white{{end}}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 shrink-0 {{if eq .CurrentPage "projects"}}text-indigo-600 dark:text-white{{else}}text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white{{end}}">
+                            <path d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Projects
+                    </a>
+                </li>
+                <li>
+                    <a href="/app/new-inspection" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "new-inspection"}}bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white{{else}}text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white{{end}}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 shrink-0 {{if eq .CurrentPage "new-inspection"}}text-indigo-600 dark:text-white{{else}}text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white{{end}}">
+                            <path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        New Inspection
+                    </a>
+                </li>
+                <li>
+                    <a href="/app/reports" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "reports"}}bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white{{else}}text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white{{end}}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 shrink-0 {{if eq .CurrentPage "reports"}}text-indigo-600 dark:text-white{{else}}text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white{{end}}">
+                            <path d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Reports
+                    </a>
+                </li>
+                <li>
+                    <a href="/app/team" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{if eq .CurrentPage "team"}}bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white{{else}}text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white{{end}}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6 shrink-0 {{if eq .CurrentPage "team"}}text-indigo-600 dark:text-white{{else}}text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white{{end}}">
+                            <path d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Team
+                    </a>
+                </li>
+            </ul>
+        </li>
+        
+        <!-- Recent Projects Section -->
+        <li>
+            <div class="text-xs/6 font-semibold text-gray-400">Recent Projects</div>
+            <ul role="list" class="-mx-2 mt-2 space-y-1">
+                {{range .RecentProjects}}
+                <li>
+                    <a href="/app/projects/{{.ID}}" class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white">
+                        <span class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/20 dark:group-hover:text-white">{{index .Name 0}}</span>
+                        <span class="truncate">{{.Name}}</span>
+                    </a>
+                </li>
+                {{else}}
+                <li>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 px-2 py-1">No recent projects</div>
+                </li>
+                {{end}}
+            </ul>
+        </li>
+
+        <!-- User profile at bottom -->
+        <li class="-mx-6 mt-auto">
+            <div class="relative">
+                <button type="button" onclick="toggleUserMenu()" class="flex w-full items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-gray-900 hover:bg-gray-50 dark:text-white dark:hover:bg-white/5">
+                    <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
+                        <span class="text-sm font-medium text-white">{{.User.Initials}}</span>
+                    </div>
+                    <span class="sr-only">Your profile</span>
+                    <span aria-hidden="true">{{.User.Name}}</span>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="size-5 text-gray-400 ml-auto">
+                        <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                
+                <!-- Desktop user dropdown menu -->
+                <div id="user-menu" class="hidden absolute bottom-full left-6 right-6 mb-2 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-white/10">
+                    <a href="/app/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Your Profile</a>
+                    <a href="/app/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Settings</a>
+                    <a href="/app/billing" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Billing</a>
+                    <hr class="my-1 border-gray-200 dark:border-gray-700">
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Sign out</a>
+                </div>
+            </div>
+        </li>
+    </ul>
+</nav>
+
+<script>
+function toggleUserMenu() {
+    const menu = document.getElementById('user-menu');
+    menu.classList.toggle('hidden');
+}
+
+// Close user menu when clicking outside
+document.addEventListener('click', function(event) {
+    const userButton = event.target.closest('[onclick="toggleUserMenu()"]');
+    const userMenu = document.getElementById('user-menu');
+    
+    if (!userButton && userMenu && !userMenu.contains(event.target)) {
+        userMenu.classList.add('hidden');
+    }
+});
+</script>
+{{end}}
