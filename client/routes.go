@@ -36,7 +36,7 @@ func handleGetSignupPage(c echo.Context) error {
 }
 
 func handleForgotPasswordPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "forgot-pasword", nil)
+	return c.Render(http.StatusOK, "forgot-password", nil)
 }
 
 func handleForgotPassword(c echo.Context) error {

@@ -39,8 +39,8 @@ func (t *Template) parseTemplates() error {
 		return fmt.Errorf("error finding partial files: %w", err)
 	}
 
-	// Get all page files
-	pageFiles, err := filepath.Glob("public/views/page/*.html")
+	// Get all page files from multiple directories
+	pageFiles, err := t.getAllPageFiles()
 	if err != nil {
 		return fmt.Errorf("error finding page files: %w", err)
 	}
@@ -69,6 +69,29 @@ func (t *Template) parseTemplates() error {
 	}
 
 	return nil
+}
+
+// Helper function to collect all page files
+func (t *Template) getAllPageFiles() ([]string, error) {
+	var allFiles []string
+	
+	// Define all the directories where page templates can be found
+	pageDirs := []string{
+		"public/views/auth/*.html",
+		"public/views/public/*.html", 
+		"public/views/app/*.html",
+		"public/views/page/*.html", // Legacy support
+	}
+	
+	for _, pattern := range pageDirs {
+		files, err := filepath.Glob(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("error finding files with pattern %s: %w", pattern, err)
+		}
+		allFiles = append(allFiles, files...)
+	}
+	
+	return allFiles, nil
 }
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
