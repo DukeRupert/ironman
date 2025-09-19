@@ -1,0 +1,251 @@
+{{define "landing"}}
+{{template "layout" .}}
+{{end}}
+
+{{define "content"}}
+<div class="bg-white dark:bg-gray-900">
+  <!-- Header -->
+  {{template "header" .}}
+
+  <main>
+    <!-- Hero section -->
+    <div class="relative isolate overflow-hidden bg-white dark:bg-gray-900">
+      <svg aria-hidden="true" class="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200 dark:stroke-white/10">
+        <defs>
+          <pattern id="983e3e4c-de6d-4c3f-8d64-b9761d1534cc" width="200" height="200" x="50%" y="-1" patternUnits="userSpaceOnUse">
+            <path d="M.5 200V.5H200" fill="none" />
+          </pattern>
+        </defs>
+        <svg x="50%" y="-1" class="overflow-visible fill-gray-50 dark:fill-gray-800/20">
+          <path d="M-200 0h201v201h-201Z M600 0h201v201h-201Z M-400 600h201v201h-201Z M200 800h201v201h-201Z" stroke-width="0" />
+        </svg>
+        <rect width="100%" height="100%" fill="url(#983e3e4c-de6d-4c3f-8d64-b9761d1534cc)" stroke-width="0" />
+      </svg>
+      <div aria-hidden="true" class="absolute top-10 left-[calc(50%-4rem)] -z-10 transform-gpu blur-3xl sm:left-[calc(50%-18rem)] lg:top-[calc(50%-30rem)] lg:left-48 xl:left-[calc(50%-24rem)]">
+        <div style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)" class="aspect-[1108/632] w-[69.25rem] bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-20"></div>
+      </div>
+      <div class="mx-auto max-w-7xl px-6 pt-10 pb-24 sm:pb-32 lg:flex lg:px-8 lg:py-40">
+        <div class="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:pt-8">
+          <div class="mt-24 sm:mt-32 lg:mt-16">
+            <a href="#" class="inline-flex space-x-6">
+              <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm/6 font-semibold text-indigo-600 ring-1 ring-indigo-600/20 ring-inset dark:bg-indigo-500/10 dark:text-indigo-400 dark:ring-indigo-500/25">What's new</span>
+              <span class="inline-flex items-center space-x-2 text-sm/6 font-medium text-gray-600 dark:text-gray-300">
+                <span>AI-Powered Safety Detection v2.0</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class="size-5 text-gray-400 dark:text-gray-500">
+                  <path d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" fill-rule="evenodd" />
+                </svg>
+              </span>
+            </a>
+          </div>
+          <h1 class="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl dark:text-white">AI-powered construction safety inspections</h1>
+          <p class="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8 dark:text-gray-400">Upload site photos and get instant OSHA compliance analysis. Identify safety violations before they become costly accidents or citations.</p>
+          <div class="mt-10 flex items-center gap-x-6">
+            <a href="/signup" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500">Start free trial</a>
+            <a href="#features" class="text-sm/6 font-semibold text-gray-900 dark:text-white">Learn more <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <div class="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none xl:ml-32">
+          <div class="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
+            <div class="w-[76rem] rounded-md bg-gray-50 shadow-xl ring-1 ring-gray-900/10 dark:bg-gray-800 dark:ring-white/10 p-8">
+              <!-- Mock dashboard interface -->
+              <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Project: Downtown Office Building</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Safety analysis completed</p>
+                </div>
+                <div class="p-6 space-y-4">
+                  <div class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <span class="text-sm font-medium text-red-800 dark:text-red-200">⚠️ Missing hard hat - OSHA 1926.95</span>
+                    <span class="text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full">High Risk</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">⚠️ Unsecured ladder - OSHA 1926.1053</span>
+                    <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full">Medium Risk</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <span class="text-sm font-medium text-green-800 dark:text-green-200">✅ Proper PPE usage - OSHA compliant</span>
+                    <span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">Compliant</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logo cloud -->
+    <div class="mx-auto mt-8 max-w-7xl px-6 sm:mt-16 lg:px-8">
+      <h2 class="text-center text-lg/8 font-semibold text-gray-900 dark:text-white">Trusted by construction companies nationwide</h2>
+      <div class="mx-auto mt-10 grid max-w-lg grid-cols-4 items-center gap-x-8 gap-y-10 sm:max-w-xl sm:grid-cols-6 sm:gap-x-10 lg:mx-0 lg:max-w-none lg:grid-cols-5">
+        <div class="col-span-2 max-h-12 w-full object-contain lg:col-span-1 flex items-center justify-center">
+          <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">ABC Construction</span>
+          </div>
+        </div>
+        <div class="col-span-2 max-h-12 w-full object-contain lg:col-span-1 flex items-center justify-center">
+          <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">BuildSafe Corp</span>
+          </div>
+        </div>
+        <div class="col-span-2 max-h-12 w-full object-contain lg:col-span-1 flex items-center justify-center">
+          <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Metro Builders</span>
+          </div>
+        </div>
+        <div class="col-span-2 max-h-12 w-full object-contain sm:col-start-2 lg:col-span-1 flex items-center justify-center">
+          <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Steel Works Inc</span>
+          </div>
+        </div>
+        <div class="col-span-2 col-start-2 max-h-12 w-full object-contain sm:col-start-auto lg:col-span-1 flex items-center justify-center">
+          <div class="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">ProBuild Ltd</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature section -->
+    <div id="features" class="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
+      <div class="mx-auto max-w-2xl lg:text-center">
+        <h2 class="text-base/7 font-semibold text-indigo-600 dark:text-indigo-400">Comprehensive Safety Analysis</h2>
+        <p class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl lg:text-balance dark:text-white">Everything you need for OSHA compliance</p>
+        <p class="mt-6 text-lg/8 text-gray-600 dark:text-gray-300">Our AI-powered platform identifies safety violations instantly, provides regulatory references, and generates comprehensive reports for your construction projects.</p>
+      </div>
+      <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
+        <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+          <div class="flex flex-col">
+            <dt class="text-base/7 font-semibold text-gray-900 dark:text-white">
+              <div class="mb-6 flex size-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6 text-white">
+                  <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M15 12l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              Instant Photo Analysis
+            </dt>
+            <dd class="mt-1 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
+              <p class="flex-auto">Upload construction site photos and receive immediate AI-powered safety violation detection with OSHA regulation references.</p>
+              <p class="mt-6">
+                <a href="#" class="text-sm/6 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">Learn more <span aria-hidden="true">→</span></a>
+              </p>
+            </dd>
+          </div>
+          <div class="flex flex-col">
+            <dt class="text-base/7 font-semibold text-gray-900 dark:text-white">
+              <div class="mb-6 flex size-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6 text-white">
+                  <path d="M9 12h3.75M9 15h3.75M9 18h3.75m3-6h.008v.008H21.75V12m.75 3l-.75.75h-.75l-1.5-1.5M12 6V3h2.25a2.25 2.25 0 011.5.6l.75.75 1.5 1.5M12 3v3m6.75 9L21 16.5m-2.25-1.5L15 12m3.75 3v3.75a2.25 2.25 0 01-2.25 2.25H12m3.75-6L12 18.75m0 0l-3.75-3.75M12 18.75V15m-6.75 3.75h3.75a2.25 2.25 0 012.25-2.25v0a2.25 2.25 0 012.25 2.25M6 12a6 6 0 1112 0 6 6 0 01-12 0z" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              Compliance Reports
+            </dt>
+            <dd class="mt-1 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
+              <p class="flex-auto">Generate detailed safety inspection reports with violation summaries, regulatory citations, and recommended corrective actions.</p>
+              <p class="mt-6">
+                <a href="#" class="text-sm/6 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">Learn more <span aria-hidden="true">→</span></a>
+              </p>
+            </dd>
+          </div>
+          <div class="flex flex-col">
+            <dt class="text-base/7 font-semibold text-gray-900 dark:text-white">
+              <div class="mb-6 flex size-10 items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6 text-white">
+                  <path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              Project Management
+            </dt>
+            <dd class="mt-1 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
+              <p class="flex-auto">Track multiple construction projects, monitor safety compliance trends, and maintain historical inspection records.</p>
+              <p class="mt-6">
+                <a href="#" class="text-sm/6 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">Learn more <span aria-hidden="true">→</span></a>
+              </p>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
+      <div class="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
+        <h2 class="text-base/8 font-semibold text-indigo-600 dark:text-indigo-400">Our impact</h2>
+        <p class="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl dark:text-white">Making construction sites safer across America</p>
+        <p class="mt-6 text-lg/8 text-gray-700 dark:text-gray-300">Our AI-powered safety inspection platform helps construction companies prevent accidents, reduce liability, and maintain OSHA compliance.</p>
+      </div>
+      <dl class="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-10 text-gray-900 sm:mt-20 sm:grid-cols-2 sm:gap-y-16 lg:mx-0 lg:max-w-none lg:grid-cols-4 dark:text-white">
+        <div class="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10">
+          <dt class="text-sm/6">Safety violations detected</dt>
+          <dd class="order-first text-3xl font-semibold tracking-tight">50,000+</dd>
+        </div>
+        <div class="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10">
+          <dt class="text-sm/6">Construction projects analyzed</dt>
+          <dd class="order-first text-3xl font-semibold tracking-tight">2,500+</dd>
+        </div>
+        <div class="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10">
+          <dt class="text-sm/6">OSHA compliance accuracy</dt>
+          <dd class="order-first text-3xl font-semibold tracking-tight">98.7%</dd>
+        </div>
+        <div class="flex flex-col gap-y-3 border-l border-gray-900/15 pl-6 dark:border-white/10">
+          <dt class="text-sm/6">Reports generated</dt>
+          <dd class="order-first text-3xl font-semibold tracking-tight">15,000+</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- CTA section -->
+    <div class="relative isolate mt-32 px-6 py-32 sm:mt-56 sm:py-40 lg:px-8">
+      <svg aria-hidden="true" class="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200 dark:stroke-white/10">
+        <defs>
+          <pattern id="1d4240dd-898f-445f-932d-e2872fd12de3" width="200" height="200" x="50%" y="0" patternUnits="userSpaceOnUse">
+            <path d="M.5 200V.5H200" fill="none" />
+          </pattern>
+        </defs>
+        <svg x="50%" y="0" class="overflow-visible fill-gray-50 dark:fill-gray-800/20">
+          <path d="M-200 0h201v201h-201Z M600 0h201v201h-201Z M-400 600h201v201h-201Z M200 800h201v201h-201Z" stroke-width="0" />
+        </svg>
+        <rect width="100%" height="100%" fill="url(#1d4240dd-898f-445f-932d-e2872fd12de3)" stroke-width="0" />
+      </svg>
+      <div aria-hidden="true" class="absolute inset-x-0 top-10 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl">
+        <div style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)" class="aspect-[1108/632] w-[69.25rem] flex-none bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-20"></div>
+      </div>
+      <div class="mx-auto max-w-2xl text-center">
+        <h2 class="text-4xl font-semibold tracking-tight text-balance text-gray-900 sm:text-5xl dark:text-white">Start protecting your workers today</h2>
+        <p class="mx-auto mt-6 max-w-xl text-lg/8 text-pretty text-gray-600 dark:text-gray-300">Join thousands of construction companies using AI-powered safety inspections to prevent accidents and maintain OSHA compliance.</p>
+        <div class="mt-10 flex items-center justify-center gap-x-6">
+          <a href="/signup" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500">Start free trial</a>
+          <a href="/demo" class="text-sm/6 font-semibold text-gray-900 dark:text-white">View demo <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="border-t border-gray-200 py-12 md:flex md:items-center md:justify-between dark:border-white/10">
+      <div class="flex justify-center gap-x-6 md:order-2">
+        <a href="#" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+          <span class="sr-only">Twitter</span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="size-6">
+            <path d="M13.6823 10.6218L20.2391 3H18.6854L12.9921 9.61788L8.44486 3H3.2002L10.0765 13.0074L3.2002 21H4.75404L10.7663 14.0113L15.5685 21H20.8131L13.6819 10.6218H13.6823ZM11.5541 13.0956L10.8574 12.0991L5.31391 4.16971H7.70053L12.1742 10.5689L12.8709 11.5655L18.6861 19.8835H16.2995L11.5541 13.096V13.0956Z" />
+          </svg>
+        </a>
+        <a href="#" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+          <span class="sr-only">LinkedIn</span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="size-6">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </a>
+        <a href="#" class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+          <span class="sr-only">YouTube</span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="size-6">
+            <path d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clip-rule="evenodd" fill-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+      <p class="mt-8 text-center text-sm/6 text-gray-600 md:order-1 md:mt-0 dark:text-gray-400">&copy; 2024 SafeSite Inspector, Inc. All rights reserved.</p>
+    </div>
+  </footer>
+</div>
+{{end}}

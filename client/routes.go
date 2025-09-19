@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -12,13 +11,44 @@ import (
 
 func RegisterRoutes(e *echo.Echo) {
 	e.Static("/static", "public/static")
-	e.GET("/", func(c echo.Context) error {
-		time.Sleep(5 * time.Second)
-		return c.JSON(http.StatusOK, "OK")
-	})
+	e.GET("/", handleGetLandingPage)
+	e.GET("/login", handleGetLoginPage)
+	e.GET("/signup", handleGetSignupPage)
+	e.GET("/forgot-password", handleForgotPasswordPage)
+	e.POST("/forgot-password", handleForgotPassword)
+	e.GET("/reset-password", handleResetPasswordPage)
+	e.POST("/reset-password", handleResetPassword)
 	e.GET("/hello", Hello)
 	e.GET("/upload", upload)
 	e.POST("/upload", handleUpload)
+}
+
+func handleGetLandingPage(c echo.Context) error {
+	return c.Render(http.StatusOK, "landing", nil)
+}
+
+func handleGetLoginPage(c echo.Context) error {
+	return c.Render(http.StatusOK, "login", nil)
+}
+
+func handleGetSignupPage(c echo.Context) error {
+	return c.Render(http.StatusOK, "signup", nil)
+}
+
+func handleForgotPasswordPage(c echo.Context) error {
+	return c.Render(http.StatusOK, "forgot-pasword", nil)
+}
+
+func handleForgotPassword(c echo.Context) error {
+	return c.String(http.StatusOK, "FIXME: Send email with reset link")
+}
+
+func handleResetPasswordPage(c echo.Context) error {
+	return c.Render(http.StatusOK, "reset-password", nil)
+}
+
+func handleResetPassword(c echo.Context) error {
+	return c.String(http.StatusOK, "FIXME: Update password")
 }
 
 func GlobalMiddleware(e *echo.Echo, logger *slog.Logger) {
