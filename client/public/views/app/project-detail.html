@@ -1,0 +1,723 @@
+{{define "project-detail"}}
+{{template "app-layout" .}}
+{{end}}
+
+{{define "app-content"}}
+<!-- Page Header with Breadcrumb -->
+<nav class="flex mb-8" aria-label="Breadcrumb">
+    <ol role="list" class="flex items-center space-x-4">
+        <li>
+            <div>
+                <a href="/app/dashboard" class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400">
+                    <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="sr-only">Home</span>
+                </a>
+            </div>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <svg class="h-5 w-5 flex-shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                </svg>
+                <a href="/app/projects" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">Projects</a>
+            </div>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <svg class="h-5 w-5 flex-shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                </svg>
+                <span class="ml-4 text-sm font-medium text-gray-500 dark:text-gray-400" aria-current="page">{{.Project.Name}}</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+
+<!-- Project Header -->
+<div class="md:flex md:items-center md:justify-between mb-8">
+    <div class="min-w-0 flex-1">
+        <div class="flex items-center">
+            <h2 class="text-2xl/7 font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight dark:text-white">{{.Project.Name}}</h2>
+            <div class="ml-4">
+                {{if eq .Project.Status "completed"}}
+                <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-500/20">Completed</span>
+                {{else if eq .Project.Status "in-progress"}}
+                <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-500/20">In Progress</span>
+                {{else if eq .Project.Status "needs-review"}}
+                <span class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 dark:bg-yellow-400/10 dark:text-yellow-500 dark:ring-yellow-400/20">Needs Review</span>
+                {{else if eq .Project.Status "archived"}}
+                <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20">Archived</span>
+                {{end}}
+            </div>
+        </div>
+        <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+            <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <svg class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.646 7.584.829.8 1.653 1.381 2.274 1.765a11.676 11.676 0 00.757.433 5.738 5.738 0 00.018.008l.006.003zM10 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clip-rule="evenodd" />
+                </svg>
+                {{.Project.Location}}
+            </div>
+            <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <svg class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" clip-rule="evenodd" />
+                </svg>
+                Inspector: {{.Project.Inspector}}
+            </div>
+            <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <svg class="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clip-rule="evenodd" />
+                </svg>
+                Last updated {{.Project.LastUpdatedFormatted}}
+            </div>
+        </div>
+    </div>
+    <div class="mt-4 flex md:mt-0 md:ml-4">
+        {{if .CanEdit}}
+        <button type="button" onclick="window.location.href='/app/projects/{{.Project.ID}}/edit'" class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit
+        </button>
+        {{end}}
+        <button type="button" onclick="generateReport('{{.Project.ID}}')" class="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-400">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Generate Report
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow-xs dark:bg-gray-800">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="rounded-md bg-red-500 p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.854-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">Violations Found</dt>
+                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{.Project.ViolationCount}}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow-xs dark:bg-gray-800">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="rounded-md bg-green-500 p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">Compliance Score</dt>
+                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{printf "%.1f" .Project.ComplianceScore}}%</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow-xs dark:bg-gray-800">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="rounded-md bg-blue-500 p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">Photos Uploaded</dt>
+                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{.Project.PhotoCount}}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow-xs dark:bg-gray-800">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="rounded-md bg-purple-500 p-3">
+                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">Report Status</dt>
+                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{if .Project.ReportGenerated}}Generated{{else}}Pending{{end}}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Main Content Grid -->
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+    <!-- Violations Management (2/3 width) -->
+    <div class="lg:col-span-2">
+        <!-- Violation Controls -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <select id="violation-filter" class="rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">All Violations</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High Risk</option>
+                    <option value="medium">Medium Risk</option>
+                    <option value="low">Low Risk</option>
+                </select>
+                <select id="validation-filter" class="rounded-md border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending Review</option>
+                    <option value="validated">Validated</option>
+                    <option value="dismissed">Dismissed</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button type="button" onclick="selectAllViolations()" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">Select All</button>
+                <span class="text-gray-300 dark:text-gray-600">|</span>
+                <button type="button" onclick="clearSelection()" class="text-sm font-medium text-gray-600 hover:text-gray-500 dark:text-gray-400">Clear</button>
+                <button type="button" onclick="bulkValidateViolations()" class="ml-4 inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-green-500 disabled:opacity-50" id="bulk-validate-btn" disabled>
+                    Validate Selected
+                </button>
+                <button type="button" onclick="bulkDismissViolations()" class="inline-flex items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-gray-500 disabled:opacity-50" id="bulk-dismiss-btn" disabled>
+                    Dismiss Selected
+                </button>
+            </div>
+        </div>
+
+        <!-- Validated Violations -->
+        <div class="mb-8 overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-5 sm:px-6 dark:border-white/10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                        Validated Violations 
+                        <span class="ml-2 inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-500/20" id="validated-count">0</span>
+                    </h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Will be included in reports</span>
+                </div>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <div id="validated-violations" class="space-y-4 min-h-[100px] border-2 border-dashed border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <div class="text-center text-gray-500 dark:text-gray-400" id="validated-empty">
+                        <svg class="mx-auto h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <p class="text-sm">Drag validated violations here or use the validate buttons</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Review Violations -->
+        <div class="mb-8 overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-5 sm:px-6 dark:border-white/10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                        Pending Review 
+                        <span class="ml-2 inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 dark:bg-yellow-400/10 dark:text-yellow-500 dark:ring-yellow-400/20" id="pending-count">0</span>
+                    </h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">AI-detected violations awaiting validation</span>
+                </div>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <div id="pending-violations" class="space-y-4 min-h-[200px] border-2 border-dashed border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    {{if .Violations}}
+                    {{range .Violations}}
+                    {{if eq .Status "open"}}
+                    <div class="violation-item cursor-move border border-gray-200 rounded-lg p-4 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors" 
+                         data-violation-id="{{.ID}}" 
+                         data-risk-level="{{.RiskLevel}}" 
+                         data-validation-status="pending"
+                         draggable="true"
+                         ondragstart="handleDragStart(event)"
+                         ondragend="handleDragEnd(event)">
+                        
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-3 flex-1">
+                                <input type="checkbox" class="violation-checkbox mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700" 
+                                       onchange="updateBulkActions()" 
+                                       value="{{.ID}}">
+                                
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3">
+                                        <h4 class="text-sm font-medium text-gray-900 dark:text-white">{{.Description}}</h4>
+                                        {{if eq .RiskLevel "critical"}}
+                                        <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-400/20">Critical</span>
+                                        {{else if eq .RiskLevel "high"}}
+                                        <span class="inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/10 dark:bg-orange-400/10 dark:text-orange-400 dark:ring-orange-400/20">High Risk</span>
+                                        {{else if eq .RiskLevel "medium"}}
+                                        <span class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 dark:bg-yellow-400/10 dark:text-yellow-500 dark:ring-yellow-400/20">Medium Risk</span>
+                                        {{else}}
+                                        <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20">Low Risk</span>
+                                        {{end}}
+                                        
+                                        <div class="flex items-center space-x-1">
+                                            <svg class="h-3 w-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                            </svg>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">AI {{printf "%.0f" (mul .AIConfidence 100)}}%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                        <span class="font-medium">OSHA {{.Regulation}}</span>
+                                        <span class="mx-2">•</span>
+                                        <span>{{.Category}}</span>
+                                        <span class="mx-2">•</span>
+                                        <span>{{.Location}}</span>
+                                    </div>
+                                    
+                                    {{if .Notes}}
+                                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">{{.Notes}}</p>
+                                    {{end}}
+                                </div>
+                            </div>
+                            
+                            <div class="ml-4 flex-shrink-0 flex items-center space-x-2">
+                                {{if .PhotoURL}}
+                                <img src="{{.PhotoURL}}" alt="Violation photo" class="h-16 w-16 rounded-lg object-cover">
+                                {{else}}
+                                <div class="h-16 w-16 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                {{end}}
+                                
+                                <svg class="h-4 w-4 text-gray-400 drag-handle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="flex space-x-2">
+                                <button onclick="validateSingleViolation('{{.ID}}')" class="inline-flex items-center rounded-md bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-green-500">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Validate
+                                </button>
+                                <button onclick="dismissSingleViolation('{{.ID}}')" class="inline-flex items-center rounded-md bg-gray-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-gray-500">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Dismiss
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                    {{end}}
+                    {{else}}
+                    <div class="text-center text-gray-500 dark:text-gray-400">
+                        <p class="text-sm">No violations pending review</p>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dismissed Violations -->
+        <div class="overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="border-b border-gray-200 px-4 py-5 sm:px-6 dark:border-white/10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                        Dismissed Violations 
+                        <span class="ml-2 inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-500/20" id="dismissed-count">0</span>
+                    </h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Will not be included in reports</span>
+                </div>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <div id="dismissed-violations" class="space-y-4 min-h-[100px] border-2 border-dashed border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div class="text-center text-gray-500 dark:text-gray-400" id="dismissed-empty">
+                        <svg class="mx-auto h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <p class="text-sm">Dismissed violations appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Info Sidebar (1/3 width) -->
+    <div class="space-y-6">
+        <!-- Project Details -->
+        <div class="overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Project Details</h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{.Project.Description}}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{.Project.CreatedAt.Format "Jan 2, 2006"}}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Inspector</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{.Project.Inspector}}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{.Project.Location}}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <button type="button" onclick="window.location.href='/app/projects/{{.Project.ID}}/photos'" class="w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20">
+                        View All Photos
+                    </button>
+                    <button type="button" onclick="exportViolations('{{.Project.ID}}')" class="w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-white/10 dark:text-white dark:shadow-none dark:ring-white/5 dark:hover:bg-white/20">
+                        Export Violations
+                    </button>
+                    {{if .CanEdit}}
+                    <button type="button" onclick="window.location.href='/app/projects/{{.Project.ID}}/add-photos'" class="w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:bg-indigo-500 dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500">
+                        Add Photos
+                    </button>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Timeline -->
+        <div class="overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                {{if .Timeline}}
+                <div class="flow-root">
+                    <ul role="list" class="-mb-8">
+                        {{range $index, $event := .Timeline}}
+                        <li>
+                            <div class="relative pb-8">
+                                {{if ne $index (sub (len $.Timeline) 1)}}
+                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
+                                {{end}}
+                                <div class="relative flex space-x-3">
+                                    <div>
+                                        {{if eq .Type "created"}}
+                                        <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                        </span>
+                                        {{else if eq .Type "photo_uploaded"}}
+                                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                            </svg>
+                                        </span>
+                                        {{else if eq .Type "violation_found"}}
+                                        <span class="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.854-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                        </span>
+                                        {{else if eq .Type "violation_resolved"}}
+                                        <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </span>
+                                        {{else}}
+                                        <span class="h-8 w-8 rounded-full bg-gray-500 flex items-center justify-center ring-8 ring-white dark:ring-gray-800">
+                                            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </span>
+                                        {{end}}
+                                    </div>
+                                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                        <div>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">{{.Description}} <span class="font-medium text-gray-900 dark:text-white">{{.UserName}}</span></p>
+                                        </div>
+                                        <div class="text-right text-xs whitespace-nowrap text-gray-500 dark:text-gray-400">
+                                            <time datetime="{{.Timestamp.Format "2006-01-02T15:04:05Z"}}">{{.Timestamp.Format "Jan 2"}}</time>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        {{end}}
+                    </ul>
+                </div>
+                {{else}}
+                <p class="text-sm text-gray-500 dark:text-gray-400">No recent activity</p>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Drag and drop functionality
+let draggedElement = null;
+
+function handleDragStart(e) {
+    draggedElement = e.currentTarget;
+    e.currentTarget.style.opacity = '0.5';
+    
+    // Add visual feedback to drop zones
+    document.querySelectorAll('#validated-violations, #dismissed-violations').forEach(zone => {
+        zone.classList.add('border-solid', 'bg-gray-50', 'dark:bg-gray-700');
+    });
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    
+    // Remove visual feedback from drop zones
+    document.querySelectorAll('#validated-violations, #dismissed-violations').forEach(zone => {
+        zone.classList.remove('border-solid', 'bg-gray-50', 'dark:bg-gray-700');
+    });
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('border-solid', 'bg-blue-50', 'dark:bg-blue-900/20');
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('border-solid', 'bg-blue-50', 'dark:bg-blue-900/20');
+}
+
+function handleDrop(e, targetStatus) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('border-solid', 'bg-blue-50', 'dark:bg-blue-900/20');
+    
+    if (draggedElement) {
+        const violationId = draggedElement.getAttribute('data-violation-id');
+        moveViolation(violationId, targetStatus);
+    }
+}
+
+// Setup drop zones
+document.addEventListener('DOMContentLoaded', function() {
+    const validatedZone = document.getElementById('validated-violations');
+    const dismissedZone = document.getElementById('dismissed-violations');
+    
+    [validatedZone, dismissedZone].forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('dragleave', handleDragLeave);
+    });
+    
+    validatedZone.addEventListener('drop', (e) => handleDrop(e, 'validated'));
+    dismissedZone.addEventListener('drop', (e) => handleDrop(e, 'dismissed'));
+    
+    // Initialize counts
+    updateCounts();
+});
+
+// Move violation between sections
+function moveViolation(violationId, targetStatus) {
+    const violationElement = document.querySelector(`[data-violation-id="${violationId}"]`);
+    if (!violationElement) return;
+    
+    // Update the data attribute
+    violationElement.setAttribute('data-validation-status', targetStatus);
+    
+    // Remove checkbox and action buttons for moved violations
+    const checkbox = violationElement.querySelector('.violation-checkbox');
+    const actionButtons = violationElement.querySelector('.mt-4');
+    if (checkbox) checkbox.style.display = 'none';
+    if (actionButtons) actionButtons.style.display = 'none';
+    
+    // Add status indicator
+    const statusIndicator = document.createElement('div');
+    statusIndicator.className = 'absolute top-2 right-2';
+    if (targetStatus === 'validated') {
+        statusIndicator.innerHTML = '<span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-500/20">✓ Validated</span>';
+    } else {
+        statusIndicator.innerHTML = '<span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:ring-red-500/20">✗ Dismissed</span>';
+    }
+    violationElement.style.position = 'relative';
+    violationElement.appendChild(statusIndicator);
+    
+    // Move to appropriate section
+    const targetContainer = document.getElementById(targetStatus === 'validated' ? 'validated-violations' : 'dismissed-violations');
+    targetContainer.appendChild(violationElement);
+    
+    // Hide empty state messages
+    document.getElementById('validated-empty').style.display = 'none';
+    document.getElementById('dismissed-empty').style.display = 'none';
+    
+    updateCounts();
+    updateBulkActions();
+    
+    // Simulate API call (replace with actual implementation)
+    console.log(`Moving violation ${violationId} to ${targetStatus}`);
+}
+
+// Single violation actions
+function validateSingleViolation(violationId) {
+    moveViolation(violationId, 'validated');
+}
+
+function dismissSingleViolation(violationId) {
+    moveViolation(violationId, 'dismissed');
+}
+
+// Bulk actions
+function selectAllViolations() {
+    document.querySelectorAll('.violation-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateBulkActions();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.violation-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.violation-checkbox:checked');
+    const validateBtn = document.getElementById('bulk-validate-btn');
+    const dismissBtn = document.getElementById('bulk-dismiss-btn');
+    
+    const hasSelection = checkedBoxes.length > 0;
+    validateBtn.disabled = !hasSelection;
+    dismissBtn.disabled = !hasSelection;
+    
+    if (hasSelection) {
+        validateBtn.textContent = `Validate Selected (${checkedBoxes.length})`;
+        dismissBtn.textContent = `Dismiss Selected (${checkedBoxes.length})`;
+    } else {
+        validateBtn.textContent = 'Validate Selected';
+        dismissBtn.textContent = 'Dismiss Selected';
+    }
+}
+
+function bulkValidateViolations() {
+    const checkedBoxes = document.querySelectorAll('.violation-checkbox:checked');
+    checkedBoxes.forEach(checkbox => {
+        moveViolation(checkbox.value, 'validated');
+    });
+}
+
+function bulkDismissViolations() {
+    const checkedBoxes = document.querySelectorAll('.violation-checkbox:checked');
+    checkedBoxes.forEach(checkbox => {
+        moveViolation(checkbox.value, 'dismissed');
+    });
+}
+
+// Update section counts
+function updateCounts() {
+    const validatedCount = document.querySelectorAll('[data-validation-status="validated"]').length;
+    const dismissedCount = document.querySelectorAll('[data-validation-status="dismissed"]').length;
+    const pendingCount = document.querySelectorAll('[data-validation-status="pending"]').length;
+    
+    document.getElementById('validated-count').textContent = validatedCount;
+    document.getElementById('dismissed-count').textContent = dismissedCount;
+    document.getElementById('pending-count').textContent = pendingCount;
+    
+    // Show/hide empty state messages
+    document.getElementById('validated-empty').style.display = validatedCount > 0 ? 'none' : 'block';
+    document.getElementById('dismissed-empty').style.display = dismissedCount > 0 ? 'none' : 'block';
+}
+
+// Filtering
+document.getElementById('violation-filter').addEventListener('change', function(e) {
+    const filterValue = e.target.value;
+    const violations = document.querySelectorAll('.violation-item');
+    
+    violations.forEach(function(violation) {
+        const riskLevel = violation.getAttribute('data-risk-level');
+        if (filterValue === '' || riskLevel === filterValue) {
+            violation.style.display = 'block';
+        } else {
+            violation.style.display = 'none';
+        }
+    });
+});
+
+document.getElementById('validation-filter').addEventListener('change', function(e) {
+    const filterValue = e.target.value;
+    const violations = document.querySelectorAll('.violation-item');
+    
+    violations.forEach(function(violation) {
+        const validationStatus = violation.getAttribute('data-validation-status');
+        if (filterValue === '' || validationStatus === filterValue) {
+            violation.style.display = 'block';
+        } else {
+            violation.style.display = 'none';
+        }
+    });
+});
+
+// Generate report function
+function generateReport(projectId) {
+    const validatedViolations = document.querySelectorAll('[data-validation-status="validated"]').length;
+    
+    if (validatedViolations === 0) {
+        alert('Please validate at least one violation before generating a report.');
+        return;
+    }
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.disabled = true;
+    button.textContent = 'Generating...';
+    button.classList.add('opacity-75');
+    
+    // Simulate report generation (replace with actual API call)
+    setTimeout(() => {
+        alert(`Report generation started with ${validatedViolations} validated violations. You will receive an email when it's ready.`);
+        button.disabled = false;
+        button.textContent = originalText;
+        button.classList.remove('opacity-75');
+    }, 2000);
+}
+
+// Export violations function
+function exportViolations(projectId) {
+    const validatedViolations = document.querySelectorAll('[data-validation-status="validated"]').length;
+    const dismissedViolations = document.querySelectorAll('[data-validation-status="dismissed"]').length;
+    const pendingViolations = document.querySelectorAll('[data-validation-status="pending"]').length;
+    
+    alert(`Exporting violations to CSV:\n- Validated: ${validatedViolations}\n- Dismissed: ${dismissedViolations}\n- Pending: ${pendingViolations}`);
+}
+
+// Show validation status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initially all violations are pending
+    document.querySelectorAll('.violation-item').forEach(violation => {
+        if (!violation.getAttribute('data-validation-status')) {
+            violation.setAttribute('data-validation-status', 'pending');
+        }
+    });
+    
+    updateCounts();
+});
+</script>
+{{end}}

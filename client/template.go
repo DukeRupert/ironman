@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -57,7 +58,35 @@ func (t *Template) parseTemplates() error {
 		templateFiles = append(templateFiles, partialFiles...)
 		templateFiles = append(templateFiles, pageFile)
 
-		funcMap := template.FuncMap{}
+		funcMap := template.FuncMap{
+			// Math functions
+			"add": func(a, b int) int { return a + b },
+			"sub": func(a, b int) int { return a - b },
+			"mul": func(a, b float64) float64 { return a * b },
+			"div": func(a, b float64) float64 {
+				if b == 0 {
+					return 0
+				}
+				return a / b
+			},
+
+			// String functions
+			"upper": strings.ToUpper,
+			"lower": strings.ToLower,
+			"title": strings.Title,
+
+			// Length functions
+			"len": func(v interface{}) int {
+				switch val := v.(type) {
+				case []interface{}:
+					return len(val)
+				case string:
+					return len(val)
+				default:
+					return 0
+				}
+			},
+		}
 
 		// Parse the combined templates
 		tmpl, err := template.New(templateName).Funcs(funcMap).ParseFiles(templateFiles...)
@@ -74,15 +103,15 @@ func (t *Template) parseTemplates() error {
 // Helper function to collect all page files
 func (t *Template) getAllPageFiles() ([]string, error) {
 	var allFiles []string
-	
+
 	// Define all the directories where page templates can be found
 	pageDirs := []string{
 		"public/views/auth/*.html",
-		"public/views/public/*.html", 
+		"public/views/public/*.html",
 		"public/views/app/*.html",
 		"public/views/page/*.html", // Legacy support
 	}
-	
+
 	for _, pattern := range pageDirs {
 		files, err := filepath.Glob(pattern)
 		if err != nil {
@@ -90,7 +119,7 @@ func (t *Template) getAllPageFiles() ([]string, error) {
 		}
 		allFiles = append(allFiles, files...)
 	}
-	
+
 	return allFiles, nil
 }
 
