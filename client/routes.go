@@ -13,21 +13,28 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func RegisterRoutes(e *echo.Echo) {
-	e.Static("/static", "public/static")
-	e.GET("/", handleGetLandingPage)
-	e.GET("/login", handleGetLoginPage)
-	e.GET("/signup", handleGetSignupPage)
-	e.GET("/forgot-password", handleForgotPasswordPage)
-	e.POST("/forgot-password", handleForgotPassword)
-	e.GET("/reset-password", handleResetPasswordPage)
-	e.POST("/reset-password", handleResetPassword)
-	e.GET("/app/dashboard", handleDashboardPage)
-	e.GET("/app/projects", handleDashboardPage)
-	e.GET("/app/projects/:id", handleProjectDetails)
-	e.GET("/hello", Hello)
-	e.GET("/upload", upload)
-	e.POST("/upload", handleUpload)
+func addRoutes(l *slog.Logger, mux *http.ServeMux, t *Template) {
+	// Create a FileServer handler for the "static" directory
+	fs := http.FileServer(http.Dir("./public/static"))
+
+	// Handle all requests at the root path using the FileServer
+	http.Handle("/static", fs)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "landing", nil)
+	})
+	// e.GET("/", handleGetLandingPage)
+	// e.GET("/login", handleGetLoginPage)
+	// e.GET("/signup", handleGetSignupPage)
+	// e.GET("/forgot-password", handleForgotPasswordPage)
+	// e.POST("/forgot-password", handleForgotPassword)
+	// e.GET("/reset-password", handleResetPasswordPage)
+	// e.POST("/reset-password", handleResetPassword)
+	// e.GET("/app/dashboard", handleDashboardPage)
+	// e.GET("/app/projects", handleDashboardPage)
+	// e.GET("/app/projects/:id", handleProjectDetails)
+	// e.GET("/hello", Hello)
+	// e.GET("/upload", upload)
+	// e.POST("/upload", handleUpload)
 }
 
 func handleGetLandingPage(c echo.Context) error {

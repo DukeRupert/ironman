@@ -6,8 +6,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-
-	"github.com/labstack/echo/v4"
 )
 
 type Template struct {
@@ -123,7 +121,7 @@ func (t *Template) getAllPageFiles() ([]string, error) {
 	return allFiles, nil
 }
 
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (t *Template) Render(w io.Writer, name string, data interface{}) error {
 	tmpl, exists := t.templates[name]
 	if !exists {
 		return fmt.Errorf("template %s not found", name)
