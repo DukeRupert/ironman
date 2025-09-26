@@ -5,7 +5,9 @@ import (
 	"html/template"
 	"io"
 	"path/filepath"
-	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type Template struct {
@@ -56,6 +58,10 @@ func (t *Template) parseTemplates() error {
 		templateFiles = append(templateFiles, partialFiles...)
 		templateFiles = append(templateFiles, pageFile)
 
+		// caser for English
+		titleCaser := cases.Title(language.English)
+		upperCaser := cases.Upper(language.English)
+		lowerCaser := cases.Lower(language.AmericanEnglish)
 		funcMap := template.FuncMap{
 			// Math functions
 			"add": func(a, b int) int { return a + b },
@@ -69,9 +75,9 @@ func (t *Template) parseTemplates() error {
 			},
 
 			// String functions
-			"upper": strings.ToUpper,
-			"lower": strings.ToLower,
-			"title": strings.Title,
+			"upper": upperCaser,
+			"lower": lowerCaser,
+			"title": titleCaser,
 
 			// Length functions
 			"len": func(v interface{}) int {

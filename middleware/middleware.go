@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -17,31 +18,74 @@ const (
 	RequestIDKey contextKey = "requestID"
 )
 
-type Middleware func(http.Handler) http.Handler
-
-func LoggingMiddleware(next http.Handler) http.Handler {
+func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		replaceOptions := &slog.HandlerOptions{
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				// Replace the message key with event_type
-				if a.Key == slog.MessageKey {
-					return slog.String("event_type", a.Value.String())
-				}
-				return a
-			},
-		}
-		l := slog.New(slog.NewJSONHandler(os.Stdout, replaceOptions))
-		logger := l.With("requestID", "").With("userID", "").With("method", r.Method).With("path", r.URL.Path)
+		requestID := generateRequestID()
 
-		// Set context
-		ctx := context.WithValue(r.Context(), LoggerKey, logger)
-		ctx = context.WithValue(ctx, StartTimeKey, start)
+		ctx := context.WithValue(r.Context(), RequestIDKey, requestID)
 		r = r.WithContext(ctx)
-
 		next.ServeHTTP(w, r)
-
-		elapsed := time.Since(start)
-		logger.Info("api_request", "duration", elapsed.String())
 	})
+}
+
+func NewLogging(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			requestID := r.Context().Value(RequestIDKey).(string)
+
+			// Create request-scoped logger with context
+			requestLogger := logger.With(
+				"request_id", requestID,
+				"method", r.Method,
+				"path", r.URL.Path,
+				"remote_addr", r.RemoteAddr,
+				"user_agent", r.UserAgent(),
+			)
+
+			// Add logger to request context
+			ctx := context.WithValue(r.Context(), LoggerKey, requestLogger)
+			r = r.WithContext(ctx)
+
+			// Wrap response writer to capture status
+			wrapped := &responseWriter{ResponseWriter: w}
+
+			requestLogger.Info("request started")
+
+			next.ServeHTTP(wrapped, r)
+
+			duration := time.Since(start)
+			requestLogger.Info("request completed",
+				"status", wrapped.status,
+				"duration_ms", duration.Milliseconds(),
+				"response_size", wrapped.size,
+			)
+		})
+	}
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+	size   int
+}
+
+func (w *responseWriter) WriteHeader(status int) {
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *responseWriter) Write(b []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	n, err := w.ResponseWriter.Write(b)
+	w.size += n
+	return n, err
+}
+
+func generateRequestID() string {
+	bytes := make([]byte, 8) // 16 character hex string
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }

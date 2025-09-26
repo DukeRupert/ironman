@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func addRoutes(l *slog.Logger, mux *http.ServeMux, t *Template) {
+func addRoutes(mux *http.ServeMux, t *Template) {
 	// Create a FileServer handler for the "static" directory
 	fs := http.FileServer(http.Dir("./public/static"))
 
@@ -22,6 +22,7 @@ func addRoutes(l *slog.Logger, mux *http.ServeMux, t *Template) {
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		t.Render(w, "landing", nil)
 	})
+	
 	// e.GET("/", handleGetLandingPage)
 	// e.GET("/login", handleGetLoginPage)
 	// e.GET("/signup", handleGetSignupPage)
