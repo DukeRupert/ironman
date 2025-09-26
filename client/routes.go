@@ -1,90 +1,133 @@
+
 package main
 
 import (
-	"context"
+	"embed"
 	"fmt"
-	"log/slog"
+	"io/fs"
+
 	"net/http"
 	"time"
 
 	"github.com/dukerupert/ironman/dto"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
-func addRoutes(mux *http.ServeMux, t *Template) {
-	// Create a FileServer handler for the "static" directory
-	fs := http.FileServer(http.Dir("./public/static"))
+//go:embed public/static/*
+var staticFS embed.FS
 
-	// Handle all requests at the root path using the FileServer
-	http.Handle("/static", fs)
+func addRoutes(mux *http.ServeMux, t *Template) {
+	// Create a FileServer handler for the embedded "static" directory
+	staticSubFS, err := fs.Sub(staticFS, "public/static")
+	if err != nil {
+		panic(fmt.Sprintf("failed to create static sub-filesystem: %v", err))
+	}
+	
+	// Handle all requests to /static/ using the embedded FileServer
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticSubFS))))
+	
+	// Landing page
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		t.Render(w, "landing", nil)
 	})
 	
-	// e.GET("/", handleGetLandingPage)
-	// e.GET("/login", handleGetLoginPage)
-	// e.GET("/signup", handleGetSignupPage)
-	// e.GET("/forgot-password", handleForgotPasswordPage)
-	// e.POST("/forgot-password", handleForgotPassword)
-	// e.GET("/reset-password", handleResetPasswordPage)
-	// e.POST("/reset-password", handleResetPassword)
-	// e.GET("/app/dashboard", handleDashboardPage)
-	// e.GET("/app/projects", handleDashboardPage)
-	// e.GET("/app/projects/:id", handleProjectDetails)
-	// e.GET("/hello", Hello)
-	// e.GET("/upload", upload)
-	// e.POST("/upload", handleUpload)
+	// Auth routes
+	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "login", nil)
+	})
+	
+	mux.HandleFunc("GET /signup", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "signup", nil)
+	})
+	
+	mux.HandleFunc("GET /forgot-password", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "forgot-password", nil)
+	})
+	
+	mux.HandleFunc("POST /forgot-password", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("FIXME: Send email with reset link"))
+	})
+	
+	mux.HandleFunc("GET /reset-password", func(w http.ResponseWriter, r *http.Request) {
+		data := struct {
+			Token string
+		}{
+			Token: r.URL.Query().Get("token"),
+		}
+		t.Render(w, "reset-password", data)
+	})
+	
+	mux.HandleFunc("POST /reset-password", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("FIXME: Update password"))
+	})
+	
+	// App routes (require authentication in production)
+	mux.HandleFunc("GET /app/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		handleDashboard(w, r, t)
+	})
+	
+	mux.HandleFunc("GET /app/projects/{id}", func(w http.ResponseWriter, r *http.Request) {
+		handleProjectDetail(w, r, t)
+	})
+	
+	mux.HandleFunc("GET /app/upload", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "upload", nil)
+	})
+	
+	mux.HandleFunc("POST /app/upload", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("FIXME: Handle upload"))
+	})
+	
+	// Hello world example
+	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "hello", "World")
+	})
 }
 
-func handleGetLandingPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "landing", nil)
+func handleDashboard(w http.ResponseWriter, r *http.Request, t *Template) {
+	user := getCurrentUser()
+
+	data := dto.DashboardData{
+		AppData: dto.AppData{
+			PageTitle:      "Dashboard",
+			CurrentPage:    "dashboard",
+			User:           user,
+			RecentProjects: getRecentProjects(user.ID),
+		},
+		Stats:              getDashboardStats(user.ID),
+		RecentProjects:     getDetailedProjects(user.ID, 5),
+		CriticalViolations: getCriticalViolations(user.ID),
+	}
+	t.Render(w, "dashboard", data)
 }
 
-func handleGetLoginPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "login", nil)
-}
+func handleProjectDetail(w http.ResponseWriter, r *http.Request, t *Template) {
+	projectID := r.PathValue("id")
+	project, err := getProjectById(projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
 
-func handleGetSignupPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "signup", nil)
-}
+	data := dto.ProjectDetailData{
+		AppData: dto.AppData{
+			PageTitle:      project.Name,
+			CurrentPage:    "projects",
+			User:           getCurrentUser(),
+			RecentProjects: getRecentProjects(getCurrentUser().ID),
+		},
+		Project:     *project,
+		Violations:  getViolationsByProject(projectID),
+		Timeline:    getProjectTimeline(projectID),
+		CanEdit:     canUserEditProject(getCurrentUser().ID, projectID),
+		CanDelete:   canUserDeleteProject(getCurrentUser().ID, projectID),
+	}
 
-func handleForgotPasswordPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "forgot-password", nil)
-}
-
-func handleForgotPassword(c echo.Context) error {
-	return c.String(http.StatusOK, "FIXME: Send email with reset link")
-}
-
-func handleResetPasswordPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "reset-password", nil)
-}
-
-func handleResetPassword(c echo.Context) error {
-	return c.String(http.StatusOK, "FIXME: Update password")
-}
-
-func handleDashboardPage(c echo.Context) error {
-	user := getCurrentUser(c)
-
-    data := dto.DashboardData{
-        AppData: dto.AppData{
-            PageTitle: "Dashboard",
-            CurrentPage: "dashboard",
-            User: user,
-            RecentProjects: getRecentProjects(user.ID),
-        },
-        Stats: getDashboardStats(user.ID),
-        RecentProjects: getDetailedProjects(user.ID, 5),
-        CriticalViolations: getCriticalViolations(user.ID),
-    }
-    return c.Render(http.StatusOK, "dashboard", data)
+	t.Render(w, "project-detail", data)
 }
 
 // getCurrentUser returns the current authenticated user
-func getCurrentUser(c echo.Context) dto.User {
+func getCurrentUser() dto.User {
 	return dto.User{
 		ID:       "user_123",
 		Name:     "John Doe",
@@ -226,29 +269,6 @@ func getDetailedProjects(userID string, limit int) []dto.Project {
 		return projects[:limit]
 	}
 	return projects
-}
-
-func handleProjectDetails(c echo.Context) error {
-	fmt.Println("handleProjectDetails()")
-    projectID := c.Param("id")
-	fmt.Println(projectID)
-    project, _ := getProjectById(projectID)
-    
-    data := dto.ProjectDetailData{
-        AppData: dto.AppData{
-            PageTitle: project.Name,
-            CurrentPage: "projects",
-            User: getCurrentUser(c),
-            RecentProjects: getRecentProjects(getCurrentUser(c).ID),
-        },
-        Project: *project,
-        Violations: getViolationsByProject(projectID),
-        Timeline: getProjectTimeline(projectID),
-        CanEdit: canUserEditProject(getCurrentUser(c).ID, projectID),
-        CanDelete: canUserDeleteProject(getCurrentUser(c).ID, projectID),
-    }
-    
-    return c.Render(http.StatusOK, "project-detail", data)
 }
 
 // getProjectTimeline returns activity timeline for a project
@@ -428,7 +448,7 @@ func getProjectById(projectID string) (*dto.Project, error) {
 func getViolationsByProject(projectID string) []dto.Violation {
 	allViolations := getCriticalViolations("") // Get all violations
 	var projectViolations []dto.Violation
-	
+
 	for _, violation := range allViolations {
 		if violation.ProjectID == projectID {
 			projectViolations = append(projectViolations, violation)
@@ -439,7 +459,7 @@ func getViolationsByProject(projectID string) []dto.Violation {
 
 // getUserRole returns the role for permission checks
 func getUserRole(userID string) string {
-	user := getCurrentUser(nil) // Simplified for mock
+	user := getCurrentUser() // Simplified for mock
 	return user.Role
 }
 
@@ -453,28 +473,4 @@ func canUserEditProject(userID, projectID string) bool {
 func canUserDeleteProject(userID, projectID string) bool {
 	role := getUserRole(userID)
 	return role == "admin"
-}
-
-func GlobalMiddleware(e *echo.Echo, logger *slog.Logger) {
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus:   true,
-		LogURI:      true,
-		LogError:    true,
-		HandleError: true, // forwards error to the global error handler, so it can decide appropriate status code
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if v.Error == nil {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-				)
-			} else {
-				logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-					slog.String("err", v.Error.Error()),
-				)
-			}
-			return nil
-		},
-	}))
 }
