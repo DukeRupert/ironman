@@ -1,12 +1,11 @@
 package main
 
 import (
+	"log"
 	"log/slog"
 	"net/http"
 
 	"github.com/dukerupert/ironman/middleware"
-
-	"github.com/labstack/gommon/log"
 )
 
 func NewServer(logger *slog.Logger) http.Handler {
