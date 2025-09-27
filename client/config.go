@@ -40,6 +40,18 @@ func GetConfig(environ []string, args []string) Config {
 		config.APP_HOST = appHost
 	}
 
+	if appPort := getEnv(environ, "APP_PORT"); appPort != "" {
+		config.APP_PORT = appPort
+	}
+
+	if dbHost := getEnv(environ, "DB_HOST"); dbHost != "" {
+		config.DB_HOST = dbHost
+	}
+
+	if dbPort := getEnv(environ, "DB_PORT"); dbPort != "" {
+		config.DB_PORT = dbPort
+	}
+
 	if dbUser := getEnv(environ, "DB_USER"); dbUser != "" {
 		config.DB_USER = dbUser
 	}
@@ -67,6 +79,18 @@ func GetConfig(environ []string, args []string) Config {
 	// Flags
 	if appHost := getFlag(args, "app_host"); appHost != "" {
 		config.APP_HOST = appHost
+	}
+
+	if appPort := getFlag(args, "app_port"); appPort != "" {
+		config.APP_PORT = appPort
+	}
+
+	if dbHost := getFlag(args, "db_host"); dbHost != "" {
+		config.DB_HOST = dbHost
+	}
+
+	if dbPort := getFlag(args, "db_port"); dbPort != "" {
+		config.DB_PORT = dbPort
 	}
 
 	if dbUser := getFlag(args, "db_user"); dbUser != "" {
