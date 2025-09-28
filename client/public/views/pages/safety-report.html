@@ -1,0 +1,445 @@
+{{define "safety-report"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Inspection Report - {{.Project.Name}}</title>
+    <style>
+        /* Print-optimized styles */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            color: #000;
+            background: white;
+            margin: 0;
+            padding: 20px;
+            font-size: 12pt;
+        }
+        
+        .report-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .report-title {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin: 10px 0;
+        }
+        
+        .company-name {
+            font-size: 14pt;
+            margin: 5px 0;
+        }
+        
+        .generated-date {
+            font-size: 12pt;
+            color: #666;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1e40af;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .info-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            background: #f8f9fa;
+            width: 25%;
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .summary-table th,
+        .summary-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .summary-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .summary-number {
+            font-size: 18pt;
+            font-weight: bold;
+        }
+        
+        .critical { color: #dc2626; }
+        .high { color: #ea580c; }
+        .medium { color: #d97706; }
+        .low { color: #059669; }
+        .compliance { color: #0891b2; }
+        
+        .overall-assessment {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        
+        .violation-item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .violation-title {
+            font-weight: bold;
+            font-size: 14pt;
+            margin-bottom: 10px;
+        }
+        
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            float: right;
+        }
+        
+        .risk-critical {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .risk-high {
+            background: #fff7ed;
+            color: #ea580c;
+            border: 1px solid #fed7aa;
+        }
+        
+        .risk-medium {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+        
+        .risk-low {
+            background: #f0fdf4;
+            color: #059669;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .violation-details {
+            margin: 10px 0;
+            font-size: 11pt;
+            color: #666;
+        }
+        
+        .violation-notes {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            font-style: italic;
+        }
+        
+        .recommendations {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        
+        .recommendations ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .recommendations li {
+            margin-bottom: 8px;
+        }
+        
+        .footer {
+            border-top: 2px solid #e5e7eb;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+            margin-top: 40px;
+        }
+        
+        .no-print {
+            display: block;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 5px;
+        }
+        
+        .print-button {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14pt;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        
+        .print-button:hover {
+            background: #1d4ed8;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                margin: 0;
+                padding: 15mm;
+                font-size: 10pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            .violation-item {
+                page-break-inside: avoid;
+            }
+            
+            .report-title {
+                font-size: 20pt;
+            }
+            
+            .section-title {
+                font-size: 14pt;
+            }
+        }
+        
+        /* Screen-only styles */
+        @media screen {
+            body {
+                background: #f5f5f5;
+            }
+            
+            .report-container {
+                background: white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                border-radius: 8px;
+                padding: 40px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Print Instructions (only visible on screen) -->
+    <div class="no-print">
+        <strong>📄 Safety Inspection Report Ready</strong><br>
+        Use your browser's print function to save as PDF or print this report.
+        <br><br>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <button class="print-button" onclick="window.history.back()">← Back to Project</button>
+    </div>
+
+    <div class="report-container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="report-title">Construction Safety Inspection Report</h1>
+            <div class="company-name">{{.CompanyInfo.Name}}</div>
+            <div class="generated-date">Generated on {{.GeneratedAt.Format "January 2, 2006 at 3:04 PM"}}</div>
+        </div>
+
+        <!-- Project Information -->
+        <div class="section">
+            <h2 class="section-title">Project Information</h2>
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Project Name</td>
+                    <td>{{.Project.Name}}</td>
+                    <td class="info-label">Location</td>
+                    <td>{{.Project.Location}}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Inspector</td>
+                    <td>{{.Project.Inspector}}</td>
+                    <td class="info-label">Inspection Date</td>
+                    <td>{{.Project.LastUpdated.Format "January 2, 2006"}}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Project Status</td>
+                    <td>{{title .Project.Status}}</td>
+                    <td class="info-label">Report Generated By</td>
+                    <td>{{.GeneratedBy.Name}}</td>
+                </tr>
+                {{if .Project.Description}}
+                <tr>
+                    <td class="info-label">Description</td>
+                    <td colspan="3">{{.Project.Description}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title">Inspection Summary</h2>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Critical</th>
+                        <th>High Risk</th>
+                        <th>Medium Risk</th>
+                        <th>Low Risk</th>
+                        <th>Compliance Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="summary-number critical">{{.Summary.CriticalCount}}</div>
+                        </td>
+                        <td>
+                            <div class="summary-number high">{{.Summary.HighCount}}</div>
+                        </td>
+                        <td>
+                            <div class="summary-number medium">{{.Summary.MediumCount}}</div>
+                        </td>
+                        <td>
+                            <div class="summary-number low">{{.Summary.LowCount}}</div>
+                        </td>
+                        <td>
+                            <div class="summary-number compliance">{{printf "%.1f" .Summary.ComplianceRate}}%</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="overall-assessment">
+                <strong>Overall Assessment:</strong> {{.Summary.OverallAssessment}}
+            </div>
+        </div>
+
+        <!-- Violations -->
+        {{if .Violations}}
+        <div class="section">
+            <h2 class="section-title">Safety Violations Details</h2>
+            
+            {{range .Violations}}
+            <div class="violation-item">
+                <div class="violation-title">
+                    {{.Description}}
+                    <span class="risk-badge risk-{{.RiskLevel}}">{{upper .RiskLevel}} Risk</span>
+                    <div style="clear: both;"></div>
+                </div>
+                
+                <div class="violation-details">
+                    <strong>OSHA Regulation:</strong> {{.Regulation}} | 
+                    <strong>Category:</strong> {{.Category}} | 
+                    <strong>Location:</strong> {{.Location}}<br>
+                    <strong>Found:</strong> {{.FoundAt.Format "January 2, 2006"}} | 
+                    <strong>AI Confidence:</strong> {{printf "%.0f" (mul .AIConfidence 100)}}%
+                </div>
+                
+                {{if .Notes}}
+                <div class="violation-notes">
+                    <strong>Inspector Notes:</strong> {{.Notes}}
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="section">
+            <h2 class="section-title">Safety Violations Details</h2>
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <p><strong>✅ No safety violations found</strong></p>
+                <p>All areas inspected are in compliance with OSHA safety standards.</p>
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Recommendations -->
+        {{if .Recommendations}}
+        <div class="section">
+            <div class="recommendations">
+                <h2 class="section-title" style="color: #0c4a6e; border-color: #0ea5e9;">Recommendations for Improvement</h2>
+                <ul>
+                    {{range .Recommendations}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+            </div>
+        </div>
+        {{else}}
+        <div class="section">
+            <div class="recommendations">
+                <h2 class="section-title" style="color: #0c4a6e; border-color: #0ea5e9;">Recommendations</h2>
+                <p>Continue maintaining current safety standards and conducting regular safety inspections to ensure ongoing compliance.</p>
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Report Generated By:</strong> SafeSite Inspector AI-powered Safety Analysis System</p>
+            <p>{{.CompanyInfo.Name}} | {{.CompanyInfo.Phone}} | {{.CompanyInfo.Email}}</p>
+            {{if .CompanyInfo.License}}
+            <p>{{.CompanyInfo.License}}</p>
+            {{end}}
+            <p style="margin-top: 15px;"><strong>Confidentiality Notice:</strong> This report contains proprietary safety analysis and should be treated as confidential business information.</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-focus print dialog option
+        document.addEventListener('DOMContentLoaded', function() {
+            // Optional: Show print dialog automatically
+            // Uncomment the line below if you want auto-print
+            // window.print();
+        });
+    </script>
+</body>
+</html>
+{{end}}
