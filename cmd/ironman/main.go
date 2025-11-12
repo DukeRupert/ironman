@@ -13,6 +13,9 @@ import (
 	"time"
 
 	// "github.com/dukerupert/go-claude"
+	"github.com/dukerupert/ironman/api/v1"
+	"github.com/dukerupert/ironman/internal/config"
+	"github.com/dukerupert/ironman/internal/logger"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -22,12 +25,13 @@ func run(ctx context.Context, w io.Writer, environ []string, args []string) erro
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	config := GetConfig(environ, args)
+	config := config.GetConfig(environ, args)
 
-	logger := SetupLogger(w, config.LOG_LEVEL, config.ENVIRONMENT)
+	logger := logger.New(w, config.LOG_LEVEL, config.ENVIRONMENT)
 
 	// Debug environment
 	logger.Debug("config", "environ", config, "args", args)
+	
 	// establish database connection
 	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DB_USER, config.DB_PASSWORD, config.DB_HOST, config.DB_PORT, config.DB_NAME)
 	db, err := pgx.Connect(ctx, connectionString)
@@ -43,7 +47,7 @@ func run(ctx context.Context, w io.Writer, environ []string, args []string) erro
 
 	logger.Info("database connection established...")
 
-	srv := NewServer(logger)
+	srv := v1.NewServer(logger)
 
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(config.APP_HOST, config.APP_PORT),

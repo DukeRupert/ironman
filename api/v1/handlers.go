@@ -1,24 +1,20 @@
-
-package main
+package v1
 
 import (
-	"embed"
 	"fmt"
 	"io/fs"
 
 	"net/http"
 	"time"
 
-	"github.com/dukerupert/ironman/dto"
-
+	"github.com/dukerupert/ironman/internal/dto"
+	"github.com/dukerupert/ironman/web/static"
+	"github.com/dukerupert/ironman/web/templates"
 )
 
-//go:embed public/static/*
-var staticFS embed.FS
-
-func addRoutes(mux *http.ServeMux, t *Template) {
+func addRoutes(mux *http.ServeMux, t *templates.Template) {
 	// Create a FileServer handler for the embedded "static" directory
-	staticSubFS, err := fs.Sub(staticFS, "public/static")
+	staticSubFS, err := fs.Sub(static.StaticFS, "public/static")
 	if err != nil {
 		panic(fmt.Sprintf("failed to create static sub-filesystem: %v", err))
 	}
@@ -84,7 +80,7 @@ func addRoutes(mux *http.ServeMux, t *Template) {
 	})
 }
 
-func handleDashboard(w http.ResponseWriter, r *http.Request, t *Template) {
+func handleDashboard(w http.ResponseWriter, r *http.Request, t *templates.Template) {
 	user := getCurrentUser()
 
 	data := dto.DashboardData{
@@ -101,7 +97,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request, t *Template) {
 	t.Render(w, "dashboard", data)
 }
 
-func handleProjectDetail(w http.ResponseWriter, r *http.Request, t *Template) {
+func handleProjectDetail(w http.ResponseWriter, r *http.Request, t *templates.Template) {
 	projectID := r.PathValue("id")
 	project, err := getProjectById(projectID)
 	if err != nil {

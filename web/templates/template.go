@@ -1,4 +1,4 @@
-package main
+package templates
 
 import (
 	"embed"
@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-//go:embed public/views/*
+//go:embed layout/* pages/* partials/*
 var templateFS embed.FS
 
 type Template struct {
